@@ -1,0 +1,9 @@
+Format as (ex):
+
+league-v2.5:
+/api/lol/{region}/v2.5/league/by-summoner/{summonerIds}
+-entries
+-name
+-queue
+/api/lol/{region}/v2.5/league/by-team/{teamIds}
+-tier
