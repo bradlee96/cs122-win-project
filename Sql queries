@@ -22,13 +22,11 @@ def sql_query(summoner, champion, stat, time_interval)
     where_statement += "AND champion = ?"
     values.append(champion)
   
-  where_statement = "WHERE summonerId = ?'
   if stat == "winrate":
     select_statement = "SELECT winner, timestamp FROM table "
     full_statement = select_statement + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
-    header = get_header(cursor)
     
     return_values = [[0,0]] * num_divisions
     for single_match in rv:
@@ -44,7 +42,6 @@ def sql_query(summoner, champion, stat, time_interval)
     full_statement = select_statement + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
-    header = get_header(cursor)
     
     return_values = [[]] * num_divisions
     for single_match in rv:
@@ -58,7 +55,6 @@ def sql_query(summoner, champion, stat, time_interval)
     full_statement = select_statement + "WHERE summonerID = ? " + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
-    header = get_header(cursor)
     
     return_values = [[]] * num_divisions
     for single_match in rv:
@@ -72,7 +68,6 @@ def sql_query(summoner, champion, stat, time_interval)
     full_statement = select_statement + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
-    header = get_header(cursor)
     
     return_values = [[]] * num_divisions
     for single_match in rv:
