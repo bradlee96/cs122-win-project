@@ -1,0 +1,60 @@
+'''
+champ winrate - (SELECT win/loss, timestamp FROM table WHERE champion = ? and summonerId = ?, [])
+gold per min - (SELECT goldEarned, timestamp, matchDuration FROM table WHERE champion = ? and summonerId = ?, [])
+KDA - (SELECT kills, assists, death, timestamp FROM table WHERE champion = ? and summonerId = ?, [])
+CS - (SELECT minionsKilled, matchDuration FROM info.db WHERE champion = ? and summonerId = ?, [])
+'''
+time_start = 1398902400
+time_end = 1453593600
+
+info = sqlite3.connect(info.db)
+cursor = info.cursor()
+
+def sql_query(summoner, champion, stat, time_interval)
+  interval = time_interval * 604800
+  values = [summoner]
+  where_statmenet = "WHERE summonerId = ? "
+  if champion != None:
+    where_statement += "AND champion = ?"
+    values.append(champion)
+  
+  where_statement = "WHERE summonerId = ?'
+  if stat == "winrate":
+    select_statement = "SELECT winner, timestamp FROM table "
+    full_statement = select_statement + where_statement
+    result = cursor.execute(full_statement, values)
+    rv = result.fetchall()
+    header = get_header(cursor)
+    for single_match in rv:
+      (single_match[1] - time_start) / interval
+      
+      
+  elif stat == "gold per minute":
+    select_statement = "SELECT goldEarned, timestamp, matchDuration FROM table "
+    full_statement = select_statement + where_statement
+    result = cursor.execute(full_statement, values)
+    rv = result.fetchall()
+    header = get_header(cursor)
+  elif stat == "KDA":
+    select_statement = "SELECT kills, assists, deaths, timestamp FROM table "
+    full_statement = select_statement + "WHERE summonerID = ? " + where_statement
+    result = cursor.execute(full_statement, values)
+    rv = result.fetchall()
+    header = get_header(cursor)
+  elif stat == "CS":
+    select_statement = "SELECT minionsKilled, matchDuration FROM table "
+    full_statement = select_statement + where_statement
+    result = cursor.execute(full_statement, values)
+    rv = result.fetchall()
+    header = get_header(cursor)
+  
+def calculate_time_interval(time_interval):
+  return time_interval * 604800
+
+  
+  
+  
+  
+  
+  
+  
