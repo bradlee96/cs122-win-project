@@ -32,7 +32,6 @@ Participant Identity:
 -player
 -baronKills
 -dragonKills
--towerKills
 ParticipantStats:
 -assists
 -deaths
