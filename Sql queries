@@ -1,3 +1,4 @@
+import math
 '''
 champ winrate - (SELECT win/loss, timestamp FROM table WHERE champion = ? and summonerId = ?, [])
 gold per min - (SELECT goldEarned, timestamp, matchDuration FROM table WHERE champion = ? and summonerId = ?, [])
@@ -11,7 +12,10 @@ info = sqlite3.connect(info.db)
 cursor = info.cursor()
 
 def sql_query(summoner, champion, stat, time_interval)
+  #interval is a number of weeks (integer)
   interval = time_interval * 604800
+  num_divisions = math.ceiling ((time_end - time_start) / interval)
+  
   values = [summoner]
   where_statmenet = "WHERE summonerId = ? "
   if champion != None:
@@ -25,9 +29,15 @@ def sql_query(summoner, champion, stat, time_interval)
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
     header = get_header(cursor)
+    
+    return_values = [[0,0]] * num_divisions
     for single_match in rv:
-      (single_match[1] - time_start) / interval
-      
+      division = math.floor((single_match[1] - time_start) / interval)
+      if single_match[1] == True:
+        return_values[division][0] += 1
+      return_values[division][1] += 1
+    for i in len(return_values):
+      return_values[i] = return_values[i]][0] / return_values[i][1]
       
   elif stat == "gold per minute":
     select_statement = "SELECT goldEarned, timestamp, matchDuration FROM table "
@@ -35,26 +45,40 @@ def sql_query(summoner, champion, stat, time_interval)
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
     header = get_header(cursor)
+    
+    return_values = [[]] * num_divisions
+    for single_match in rv:
+      division = math.floor((single_match[1] - time_start) / interval)
+      return_values[division].append(single_match[0] / single_match[2])
+    for i in len(return_values):
+      return_values[i] = sum(return_values[i]) / len(return_values[i])
+      
   elif stat == "KDA":
     select_statement = "SELECT kills, assists, deaths, timestamp FROM table "
     full_statement = select_statement + "WHERE summonerID = ? " + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
     header = get_header(cursor)
+    
+    return_values = [[]] * num_divisions
+    for single_match in rv:
+      division = math.floor((single_match[3] - time_start) / interval)
+      return_values[division].append((single_match[0] + single_match[1]) / single_match[2])
+    for i in len(return_values):
+      return_values[i] = sum(return_values[i]) / len(return_values[i])
+      
   elif stat == "CS":
-    select_statement = "SELECT minionsKilled, matchDuration FROM table "
+    select_statement = "SELECT minionsKilled, matchDuration, timestamp FROM table "
     full_statement = select_statement + where_statement
     result = cursor.execute(full_statement, values)
     rv = result.fetchall()
     header = get_header(cursor)
-  
-def calculate_time_interval(time_interval):
-  return time_interval * 604800
-
-  
-  
-  
-  
-  
-  
-  
+    
+    return_values = [[]] * num_divisions
+    for single_match in rv:
+      division = math.floor((single_match[2] - time_start) / interval)
+      return_values[division].append(single_match[0] / single-match[1])
+    for i in len(return_values):
+      return_values[i] = sum(return_values[i]) / len(return_values[i]) 
+      
+  return return_values
