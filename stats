@@ -7,3 +7,13 @@ league-v2.5:
 -queue
 /api/lol/{region}/v2.5/league/by-team/{teamIds}
 -tier
+
+matchlist-v2.2:
+/api/lol/{region}/v2.2/matchlist/by-summoner/{summonerId}
+-champion
+-lane
+-matchId
+-queue
+-role
+-season
+-timestamp
