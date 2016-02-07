@@ -7,7 +7,7 @@ key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
 key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
 
-SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 'season', 'time_stamp', 'champion', 'winner']
+SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 'season', 'time_stamp', 'match_duration', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold']
 
 summoner_name = 'hanazono'
 summoner_name = summoner_name.replace(' ','')
@@ -39,12 +39,16 @@ def get_matches(summoner_id, key):
 	matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
 	matches_info_not_byte = matches_info.readall().decode('utf-8')
 	matches = json.loads(matches_info_not_byte)
-	# print(matches['matches'][0].keys())
-	for match in matches['matches'][0:5]:
+	print('hi',matches['matches'][0].keys())
+	for match in matches['matches'][0:1]:
 		# time.sleep(1.2)
-		match_list.append(get_match_info_for_summoner(match, key, summoner_name))
+		to_append = get_match_info_for_summoner(match, key, summoner_name)
+		to_append['lane'] = match['lane']
+		to_append['role'] = match['role']
+		match_list.append(to_append)
 
 	return match_list
+
 
 def get_match_info_for_summoner(match, key, summoner_name):
 	'''
@@ -62,19 +66,35 @@ def get_match_info_for_summoner(match, key, summoner_name):
 		#print(match['participantIdentities'][player]['player']['summonerName'], match['participantIdentities'][player]['participantId'])
 		player_participant[match_json['participantIdentities'][player]['player']['summonerName'].lower()] = match_json['participantIdentities'][player]['participantId']
 
+
 	match_info_for_summoner = [match_json['participants'][i] for i in range(10) if match_json['participants'][i]['participantId'] == player_participant[summoner_name]][0]
 	match_info_for_summoner['match_id'] = match['matchId']
+	match_info_for_summoner['match_duration'] = match_json['matchDuration']
 	match_info_for_summoner['season'] = match['season']
 	match_info_for_summoner['timestamp'] = match['timestamp']
-
+	# print(match_info_for_summoner.keys())
 	return match_info_for_summoner
 
 def add_to_SQL(s_id, s_name, match_list):
 	values = []
 	for match in match_list:
-		values.append((s_id, s_name, match['match_id'], match['season'], match['timestamp'], champion_id_table[match['championId']], match['stats']['winner']))
+		values.append((s_id, 
+			s_name, 
+			match['match_id'], 
+			match['season'], 
+			match['timestamp'], 
+			match['match_duration'],
+			champion_id_table[match['championId']],
+			match['lane'],
+			match['role'], 
+			match['stats']['winner'], 
+			match['stats']['minionsKilled'],
+			match['stats']['kills'],
+			match['stats']['deaths'],
+			match['stats']['assists'],
+			match['stats']['goldEarned']))
 
-	conn = sqlite3.connect('info4.db')
+	conn = sqlite3.connect('info5.db')
 	try:
 		conn.executemany('INSERT INTO defaultinfo VALUES ({})'.format(','.join('?' * len(values[0]))), (values))
 	except Exception:
