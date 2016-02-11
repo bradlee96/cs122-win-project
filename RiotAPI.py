@@ -45,7 +45,7 @@ def get_matches(summoner_id, key):
 	matches = json.loads(matches_info_not_byte)
 
 	# print('hi',matches['matches'][0].keys())
-	for match in matches['matches'][0:5]:
+	for match in matches['matches']:
 		time.sleep(1.2)
 		to_append = get_match_info_for_summoner(match, key, summoner_name)
 		to_append['lane'] = match['lane']
@@ -62,7 +62,6 @@ def get_match_info_for_summoner(match, key, summoner_name):
 	match_id = match['matchId']
 
 	match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
-	time.sleep(1.1)
 	match_info_not_byte = match_info.readall().decode('utf-8')
 	match_json = json.loads(match_info_not_byte)
 	#print(match['participants'][0])
@@ -116,5 +115,5 @@ def add_to_SQL(s_id, s_name, match_list, file_name):
 	conn.close()
 
 pie = get_matches(summoner_id, key)
-export_matches('50hanazonotest.txt',pie)
-add_to_SQL(summoner_id, summoner_name, pie, 'Johnathan_Games.db')
+export_matches('Johnathans_games_json.txt',pie)
+add_to_SQL(summoner_id, summoner_name, pie, 'Johnathan_Games_sql.db')
