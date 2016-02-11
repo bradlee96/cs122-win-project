@@ -15,13 +15,28 @@ time_end = 1453593600
 info = sqlite3.connect('info.db')
 cursor = info.cursor()
 
-def sql_query(summoner, champion, stat, time_interval):
+time_start = 1398902400
+
+time_end = 1453593600
+
+def pick_time_interval(start_date, end_date):
+    # date = "mm-dd-yyyy"
+    start = time_start + start_date[0:2] *  2419200 + \
+            start_date[3:5] * 86400 + start_date[6:10] * 31536000
+    end = time_end + end_date[0:2] *  2419200 + \
+          end_date[3:5] * 86400 + end_date[6:10] * 31536000
+    return start,end
+
+def sql_query(summoner, champion, stat, time_interval, start_date, end_date):
 	# interval is a number of weeks (integer)
 	interval = time_interval * 604800
 	num_divisions = math.ceil((time_end - time_start) / interval)
+
+	start, end = pick_time_interval(start_date, end_date)
 	
 	values = [summoner]
 	where_statement = "WHERE summoner_id = ? "
+	where_statement += "AND time_stamp >= start AND time_stamp <= end"
 	if champion != None:
 		where_statement += "AND champion = ?"
 		values.append(champion)
@@ -39,7 +54,7 @@ def sql_query(summoner, champion, stat, time_interval):
 		print(len(return_values))
 		for single_match in rv:
 			print(single_match[1])
-			division = math.floor((single_match[1] - time_start) / interval)
+			division = math.floor((single_match[1] - start) / interval)
 			print('division', division)
 			if single_match[1] == 1:
 				return_values[division][0] += 1
@@ -56,7 +71,7 @@ def sql_query(summoner, champion, stat, time_interval):
 		
 		return_values = [[]] * num_divisions
 		for single_match in rv:
-			division = math.floor((single_match[1] - time_start) / interval)
+			division = math.floor((single_match[1] - start) / interval)
 			return_values[division].append(single_match[0] / single_match[2])
 		for i in range(len(return_values)):
 			return_values[i] = sum(return_values[i]) / len(return_values[i])
@@ -69,7 +84,7 @@ def sql_query(summoner, champion, stat, time_interval):
 		
 		return_values = [[]] * num_divisions
 		for single_match in rv:
-			division = math.floor((single_match[3] - time_start) / interval)
+			division = math.floor((single_match[3] - start) / interval)
 			return_values[division].append((single_match[0] + single_match[1]) / single_match[2])
 		for i in range(len(return_values)):
 			return_values[i] = sum(return_values[i]) / len(return_values[i])
@@ -82,7 +97,7 @@ def sql_query(summoner, champion, stat, time_interval):
 		
 		return_values = [[]] * num_divisions
 		for single_match in rv:
-			division = math.floor((single_match[2] - time_start) / interval)
+			division = math.floor((single_match[2] - start) / interval)
 			return_values[division].append(single_match[0] / single-match[1])
 		for i in range(len(return_values)):
 			return_values[i] = sum(return_values[i]) / len(return_values[i]) 
