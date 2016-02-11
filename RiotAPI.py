@@ -7,7 +7,10 @@ key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
 key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
 
-SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 'season', 'time_stamp', 'match_duration', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold']
+SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 
+'season', 'time_stamp', 'match_duration', 'champion', 'lane', 
+'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
+'wards_placed', 'wards_killed']
 
 summoner_name = 'hanazono'
 summoner_name = summoner_name.replace(' ','')
@@ -39,9 +42,9 @@ def get_matches(summoner_id, key):
 	matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
 	matches_info_not_byte = matches_info.readall().decode('utf-8')
 	matches = json.loads(matches_info_not_byte)
-	print('hi',matches['matches'][0].keys())
-	for match in matches['matches'][0:1]:
-		# time.sleep(1.2)
+	# print('hi',matches['matches'][0].keys())
+	for match in matches['matches'][0:50]:
+		time.sleep(1.2)
 		to_append = get_match_info_for_summoner(match, key, summoner_name)
 		to_append['lane'] = match['lane']
 		to_append['role'] = match['role']
@@ -82,9 +85,9 @@ def add_to_SQL(s_id, s_name, match_list):
 			s_name, 
 			match['match_id'], 
 			match['season'], 
-			match['timestamp'], 
+			match['timestamp']/1000, 
 			match['match_duration'],
-			champion_id_table[match['championId']],
+			champion_id_table[match['championId']].lower(),
 			match['lane'],
 			match['role'], 
 			match['stats']['winner'], 
@@ -92,9 +95,11 @@ def add_to_SQL(s_id, s_name, match_list):
 			match['stats']['kills'],
 			match['stats']['deaths'],
 			match['stats']['assists'],
-			match['stats']['goldEarned']))
+			match['stats']['goldEarned'],
+			match['stats']['wardsPlaced'],
+			match['stats']['wardsKilled']))
 
-	conn = sqlite3.connect('info5.db')
+	conn = sqlite3.connect('info.db')
 	try:
 		conn.executemany('INSERT INTO defaultinfo VALUES ({})'.format(','.join('?' * len(values[0]))), (values))
 	except Exception:
@@ -103,6 +108,18 @@ def add_to_SQL(s_id, s_name, match_list):
 
 	conn.commit()
 	conn.close()
+
+# def get_logit_data(db_file_name):
+# 	'''
+# 	Dependent Variable is winner
+# 	I guess regressors can be kills, deaths, assists, cs, wards placed, wards killed
+# 	'''
+# 	info = sqlite3.connect('{}.db'.format(db_file_name))
+# 	cursor = info.cursor()
+# 	data = cursor.execute('SELECT kills, deaths, assists, cs, wards_placed, wards_killed FROM defaultinfo').fetchall()
+
+# 	return data
+
 
 
 pie = get_matches(summoner_id, key)
