@@ -6,19 +6,14 @@ import sqlite3
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
 key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
-'''
-dmg dealt as percent of team
-'''
+key_list = [key, key2, key3]
+
+
 SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 
 'season', 'time_stamp', 'match_duration', 'champion', 'lane', 
 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
 'wards_placed', 'wards_killed']
 
-summoner_name = 'ghibli studios'
-
-summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format(summoner_name.replace(' ',''),key))
-summoner_info_not_byte = summoner_info.readall().decode('utf-8')
-summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
 
 def get_champion_id_table(key):
 	'''
@@ -35,7 +30,7 @@ def get_champion_id_table(key):
 
 champion_id_table = get_champion_id_table(key)
 
-def get_matches(summoner_id, key):
+def get_matches(summoner_name, summoner_id, key):
 	'''
 	Returns a list of matches for a given summoner. The stats for the summoner are returned, and nothing else
 	'''
@@ -44,13 +39,16 @@ def get_matches(summoner_id, key):
 	matches_info_not_byte = matches_info.readall().decode('utf-8')
 	matches = json.loads(matches_info_not_byte)
 
-	# print('hi',matches['matches'][0].keys())
+	key_counter = 1
+	start_time = time.clock()
 	for match in matches['matches']:
-		time.sleep(1.2)
-		to_append = get_match_info_for_summoner(match, key, summoner_name)
+		print(time.clock())
+		to_append = get_match_info_for_summoner(match, key_list[key_counter % len(key_list)], summoner_name)
+		# print(key_list[key_counter % len(key_list)], time.clock() - start_time)
 		to_append['lane'] = match['lane']
 		to_append['role'] = match['role']
 		match_list.append(to_append)
+		key_counter += 1
 
 	return match_list
 
@@ -58,25 +56,24 @@ def get_matches(summoner_id, key):
 def get_match_info_for_summoner(match, key, summoner_name):
 	'''
 	Parses out the summoner-specific information. Returns a dictionary
+	Have to do this super awkward thing where for some reason the Json is not organized by name or id but rather
+	a pretty much randomly assigned participantId, so we have to go in, find it, then find which index holds that player id...
 	'''
 	match_id = match['matchId']
 
 	match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
 	match_info_not_byte = match_info.readall().decode('utf-8')
 	match_json = json.loads(match_info_not_byte)
-	#print(match['participants'][0])
 	player_participant = {}
 	for player in range(10):
-		#print(match['participantIdentities'][player]['player']['summonerName'], match['participantIdentities'][player]['participantId'])
-		player_participant[match_json['participantIdentities'][player]['player']['summonerName'].lower()] = match_json['participantIdentities'][player]['participantId']
+		if match_json['participantIdentities'][player]['player']['summonerName'].lower() == summoner_name:
+			match_info_for_summoner = match_json['participants'][player]
+			break
 
-
-	match_info_for_summoner = [match_json['participants'][i] for i in range(10) if match_json['participants'][i]['participantId'] == player_participant[summoner_name]][0]
 	match_info_for_summoner['match_id'] = match['matchId']
 	match_info_for_summoner['match_duration'] = match_json['matchDuration']
 	match_info_for_summoner['season'] = match['season']
 	match_info_for_summoner['timestamp'] = match['timestamp']
-	# print(match_info_for_summoner.keys())
 	return match_info_for_summoner
 
 def export_matches(file_name,matchlist):
@@ -114,6 +111,25 @@ def add_to_SQL(s_id, s_name, match_list, file_name):
 	conn.commit()
 	conn.close()
 
-pie = get_matches(summoner_id, key)
-export_matches('Johnathans_games_json.txt',pie)
-add_to_SQL(summoner_id, summoner_name, pie, 'Johnathan_Games_sql.db')
+
+def runit(summoner_name, save_json = True, write_SQL = True):
+	print('Start:', time.clock())
+	champion_id_table = get_champion_id_table(key)
+
+	summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format(summoner_name.replace(' ',''), key))
+	summoner_info_not_byte = summoner_info.readall().decode('utf-8')
+	summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
+
+	print('Pulling Matches')
+	pie = get_matches(summoner_name, summoner_id, key)
+
+	if save_json == True:
+		print('Saving Json')
+		export_matches('{}_json.txt'.format(summoner_name+'hi'),pie)
+
+	if write_SQL == True:
+		print('Creating SQL database')
+		add_to_SQL(summoner_id, summoner_name, pie, '{}_sql.db'.format(summoner_name+'hi'))
+
+	print('Finish:', time.clock())
+
