@@ -6,18 +6,19 @@ import sqlite3
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
 key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
-
+'''
+dmg dealt as percent of team
+'''
 SQL_columns = ['summoner_id', 'summoner_name', 'match_id', 
 'season', 'time_stamp', 'match_duration', 'champion', 'lane', 
 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
 'wards_placed', 'wards_killed']
 
-summoner_name = 'hanazono'
-summoner_name = summoner_name.replace(' ','')
+summoner_name = 'ghibli studios'
 
-summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format(summoner_name,key))
+summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format(summoner_name.replace(' ',''),key))
 summoner_info_not_byte = summoner_info.readall().decode('utf-8')
-summoner_id = json.loads(summoner_info_not_byte)[summoner_name]['id']
+summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
 
 def get_champion_id_table(key):
 	'''
@@ -42,8 +43,9 @@ def get_matches(summoner_id, key):
 	matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
 	matches_info_not_byte = matches_info.readall().decode('utf-8')
 	matches = json.loads(matches_info_not_byte)
+
 	# print('hi',matches['matches'][0].keys())
-	for match in matches['matches'][0:50]:
+	for match in matches['matches'][0:5]:
 		time.sleep(1.2)
 		to_append = get_match_info_for_summoner(match, key, summoner_name)
 		to_append['lane'] = match['lane']
@@ -60,7 +62,7 @@ def get_match_info_for_summoner(match, key, summoner_name):
 	match_id = match['matchId']
 
 	match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
-	time.sleep(1.2)
+	time.sleep(1.1)
 	match_info_not_byte = match_info.readall().decode('utf-8')
 	match_json = json.loads(match_info_not_byte)
 	#print(match['participants'][0])
@@ -78,7 +80,11 @@ def get_match_info_for_summoner(match, key, summoner_name):
 	# print(match_info_for_summoner.keys())
 	return match_info_for_summoner
 
-def add_to_SQL(s_id, s_name, match_list):
+def export_matches(file_name,matchlist):
+	with open(file_name, 'w') as outfile:
+	    json.dump(matchlist, outfile)
+
+def add_to_SQL(s_id, s_name, match_list, file_name):
 	values = []
 	for match in match_list:
 		values.append((s_id, 
@@ -99,7 +105,7 @@ def add_to_SQL(s_id, s_name, match_list):
 			match['stats']['wardsPlaced'],
 			match['stats']['wardsKilled']))
 
-	conn = sqlite3.connect('info.db')
+	conn = sqlite3.connect(file_name)
 	try:
 		conn.executemany('INSERT INTO defaultinfo VALUES ({})'.format(','.join('?' * len(values[0]))), (values))
 	except Exception:
@@ -109,18 +115,6 @@ def add_to_SQL(s_id, s_name, match_list):
 	conn.commit()
 	conn.close()
 
-# def get_logit_data(db_file_name):
-# 	'''
-# 	Dependent Variable is winner
-# 	I guess regressors can be kills, deaths, assists, cs, wards placed, wards killed
-# 	'''
-# 	info = sqlite3.connect('{}.db'.format(db_file_name))
-# 	cursor = info.cursor()
-# 	data = cursor.execute('SELECT kills, deaths, assists, cs, wards_placed, wards_killed FROM defaultinfo').fetchall()
-
-# 	return data
-
-
-
 pie = get_matches(summoner_id, key)
-add_to_SQL(summoner_id, summoner_name, pie)
+export_matches('50hanazonotest.txt',pie)
+add_to_SQL(summoner_id, summoner_name, pie, 'Johnathan_Games.db')
