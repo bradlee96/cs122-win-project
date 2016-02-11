@@ -15,10 +15,6 @@ time_end = 1453593600
 info = sqlite3.connect('info.db')
 cursor = info.cursor()
 
-time_start = 1398902400
-
-time_end = 1453593600
-
 def pick_time_interval(start_date, end_date):
     # date = "mm-dd-yyyy"
     start = time_start + start_date[0:2] *  2419200 + \
