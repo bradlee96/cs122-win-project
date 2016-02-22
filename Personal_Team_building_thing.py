@@ -13,19 +13,19 @@ Maybe we can just use a 'regression-like' sort of thing, where we use a greedy f
 
 import time
 import json
-# g1 = {'win': 1, 'me': 'malphite',
+# g1 = {'winner': 1, 'me': 'malphite',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
-# g2 = {'win': 1, 'me': 'lux',
+# g2 = {'winner': 1, 'me': 'lux',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
-# g3 = {'win': 1, 'me': 'lux',
+# g3 = {'winner': 1, 'me': 'lux',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
-# g4 = {'win': 0, 'me': 'malphite',
+# g4 = {'winner': 0, 'me': 'malphite',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
-# g5 = {'win': 0, 'me': 'malphite',
+# g5 = {'winner': 0, 'me': 'malphite',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
 
@@ -42,13 +42,13 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 		bigdict.setdefault(match['me'],{'allies':{},'enemies':{}})
 		for ally in match['allies']:
 			bigdict[match['me']]['allies'].setdefault(ally,[0,0])
-			if match['win'] == 1:
+			if match['winner'] == 1:
 				bigdict[match['me']]['allies'][ally][0] += 1
 			else:
 				bigdict[match['me']]['allies'][ally][1] += 1
 		for enemy in match['enemies']:
 			bigdict[match['me']]['enemies'].setdefault(enemy,[0,0])
-			if match['win'] == 1:
+			if match['winner'] == 1:
 				bigdict[match['me']]['enemies'][enemy][0] += 1
 			else:
 				bigdict[match['me']]['enemies'][enemy][1] += 1
@@ -74,11 +74,15 @@ def suggest(data, allies, enemies):
 		for enemy in data[champ]['enemies']:
 			dic[champ][enemy] = data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
 
+
 	final_result = ['', 0]
 	for champ in dic:
 		fitness = 0
 		for guy in allies + enemies:
-			fitness += dic[champ][guy]
+			try:
+				fitness += dic[champ][guy]
+			except KeyError:
+				pass
 			# print(champ, dic[champ][guy], guy)
 		if fitness > final_result[1]:
 			final_result = [champ, fitness]
@@ -90,5 +94,8 @@ def runit(filename):
 		d = json.load(json_data)
 		json_data.close()
 	
+		learned = calculate_win_rate_per_champion_wrt_others(d)	
+		print(suggest(learned,['janna','kalista'],['kassadin']))
+		print(suggest(learned,['kassadin'],['janna','kalista']))
 # print(calculate_win_rate_per_champion_wrt_others(matches))
 # print(suggest(calculate_win_rate_per_champion_wrt_others(matches),['janna'], ['braum']))

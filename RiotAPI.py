@@ -17,7 +17,7 @@ def get_champion_id_table(key):
 	champ_info = json.loads(champ_api_not_byte)['data']
 	cleaned_table = {}
 	for champion in champ_info.keys():
-		cleaned_table[champ_info[champion]['id']] = champion
+		cleaned_table[champ_info[champion]['id']] = champion.lower()
 	
 	return cleaned_table
 
@@ -60,30 +60,17 @@ def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
 	match_info_not_byte = match_info.readall().decode('utf-8')
 	match_json = json.loads(match_info_not_byte)
 
-	'''
-	"participantIdentities": [
-      {
-         "player": {
-            "profileIcon": 712,
-            "matchHistoryUri": "/v1/stats/player_history/NA1/204659204",
-            "summonerName": "shiwonhada",
-            "summonerId": 41657919
-         },
-         "participantId": 1
-      },
-	'''
-
 	data = {'match_id': 0,'me': 0, 'allies': [], 'enemies': []}
 	for player in range(10):
 		if match_json['participantIdentities'][player]['player']['summonerName'].lower() == summoner_name:
-			data['me'] = match_json['participants'][player]['championId']
+			data['me'] = champion_id_table[match_json['participants'][player]['championId']]
 			player_participant_id = match_json['participantIdentities'][player]['participantId']
 			match_info_for_summoner = match_json['participants'][player]
 			# data['temp'] = player_participant_id
 		elif player <= 4:
-			data['allies'].append(match_json['participants'][player]['championId'])
+			data['allies'].append(champion_id_table[match_json['participants'][player]['championId']])
 		else:
-			data['enemies'].append(match_json['participants'][player]['championId'])
+			data['enemies'].append(champion_id_table[match_json['participants'][player]['championId']])
 
 	if player_participant_id > 5:
 		data['allies'], data['enemies'] = data['enemies'], data['allies']
@@ -93,6 +80,7 @@ def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
 	match_info_for_summoner['season'] = match['season']
 	match_info_for_summoner['timestamp'] = match['timestamp']
 	data['match_id'] = match['matchId']
+	data['winner'] = match_info_for_summoner['stats']['winner']
 
 	return match_info_for_summoner, data
 
@@ -114,7 +102,7 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
 'wards_placed', 'wards_killed']
 	SQL_team_columns = ['summoner_id', 'summoner_name', 'match_id', 
-'me', 'ally1', 'ally2', 'ally3', 'ally4',
+'winner', 'me', 'ally1', 'ally2', 'ally3', 'ally4',
 'enemy1', 'enemy2', 'enemy3',' enemy4', 'enemy5']
 	values = []
 	team_values = []
@@ -126,7 +114,7 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 			match['season'], 
 			match['timestamp']/1000, 
 			match['match_duration'],
-			champion_id_table[match['championId']].lower(),
+			champion_id_table[match['championId']],
 			match['lane'],
 			match['role'], 
 			match['stats']['winner'], 
@@ -142,6 +130,7 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 		team_values.append((s_id, 
 			s_name,
 			team['match_id'],
+			team['winner'],
 			team['me'],
 			team['allies'][0],
 			team['allies'][1],
@@ -179,8 +168,8 @@ def runit(summoner_name,save_json = True, write_SQL = True):
 
 	if save_json == True:
 		print('Saving Jsons')
-		export_matches('{}_summoner_json.json'.format(summoner_name),data_tuple[0])
-		export_matches('{}_team_json.json'.format(summoner_name),data_tuple[1])
+		export_matches('{}_summoner.json'.format(summoner_name),data_tuple[0])
+		export_matches('{}_team.json'.format(summoner_name),data_tuple[1])
 
 	if write_SQL == True:
 		print('Creating SQL databases')
