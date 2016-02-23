@@ -11,6 +11,11 @@ maybe we use a 'discrete' sort of thing, find the champion you play with the gre
 Maybe we can just use a 'regression-like' sort of thing, where we use a greedy feed forward algorithm to pick who your champion would do the best with
 '''
 
+
+'''
+Need to add some sort of experience factor, maybe a linear/logistic function
+up to, say, like 50 games. 
+'''
 import time
 import json
 # g1 = {'winner': 1, 'me': 'malphite',
@@ -55,7 +60,7 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 
 	return bigdict
 
-def suggest(data, allies, enemies):
+def suggest(data, allies, enemies, lane, role):
 	'''
 	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
 	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
@@ -78,12 +83,15 @@ def suggest(data, allies, enemies):
 	final_result = ['', 0]
 	for champ in dic:
 		fitness = 0
+		normalizer = 0.0001
 		for guy in allies + enemies:
 			try:
 				fitness += dic[champ][guy]
+				normalizer += 1
 			except KeyError:
 				pass
 			# print(champ, dic[champ][guy], guy)
+		fitness = fitness / normalizer
 		if fitness > final_result[1]:
 			final_result = [champ, fitness]
 
@@ -95,7 +103,5 @@ def runit(filename):
 		json_data.close()
 	
 		learned = calculate_win_rate_per_champion_wrt_others(d)	
-		print(suggest(learned,['janna','kalista'],['kassadin']))
+		print(suggest(learned,['janna','kalista','braum'],['kassadin']))
 		print(suggest(learned,['kassadin'],['janna','kalista']))
-# print(calculate_win_rate_per_champion_wrt_others(matches))
-# print(suggest(calculate_win_rate_per_champion_wrt_others(matches),['janna'], ['braum']))

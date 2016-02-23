@@ -29,15 +29,19 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	'''
 	match_list = []
 	team_list = []
-	matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
+	matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=TEAM_BUILDER_DRAFT_RANKED_5x5,RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
+	# matches_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=RANKED_SOLO_5x5&api_key={}'.format(summoner_id,key))
 	matches_info_not_byte = matches_info.readall().decode('utf-8')
 	matches = json.loads(matches_info_not_byte)
 
 	key_counter = 1
 	for match in matches['matches']:
+		print(key_counter)
 		to_append = get_match_info_for_summoner(match, key_list[key_counter % len(key_list)], summoner_name)
 		to_append[0]['lane'] = match['lane']
 		to_append[0]['role'] = match['role']
+		to_append[1]['lane'] = match['lane']
+		to_append[1]['role'] = match['role']
 		match_list.append(to_append[0])
 		team_list.append(to_append[1])
 		key_counter += 1
@@ -45,7 +49,7 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	return match_list, team_list
 
 
-def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
+def get_match_info_for_summoner(match, key, summoner_name):
 	'''
 	Parses out the summoner-specific information. Returns a dictionary
 	Have to do this super awkward thing where for some reason the Json is not organized by name or id but rather
@@ -55,8 +59,16 @@ def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
 	I'm like 99% sure that the participantId 1-5 are on a team
 	'''
 	match_id = match['matchId']
-
-	match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
+	counter = 0
+	while True:
+		try:
+			match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
+		except urllib.error.HTTPError:
+			counter+=1
+			if counter == 10:
+				break
+			continue
+		break
 	match_info_not_byte = match_info.readall().decode('utf-8')
 	match_json = json.loads(match_info_not_byte)
 
@@ -66,7 +78,6 @@ def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
 			data['me'] = champion_id_table[match_json['participants'][player]['championId']]
 			player_participant_id = match_json['participantIdentities'][player]['participantId']
 			match_info_for_summoner = match_json['participants'][player]
-			# data['temp'] = player_participant_id
 		elif player <= 4:
 			data['allies'].append(champion_id_table[match_json['participants'][player]['championId']])
 		else:
@@ -84,11 +95,6 @@ def get_match_info_for_summoner(match, key, summoner_name):#, team_data = True):
 
 	return match_info_for_summoner, data
 
-	# if team_data = True:
-	# 	return match_info_for_summoner, data
-	# else:
-	# 	return match_info_for_summoner
-
 def export_matches(file_name, matchlist):
 	with open(file_name, 'w') as outfile:
 	    json.dump(matchlist, outfile)
@@ -101,9 +107,13 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 'season', 'time_stamp', 'match_duration', 'champion', 'lane', 
 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
 'wards_placed', 'wards_killed']
+
 	SQL_team_columns = ['summoner_id', 'summoner_name', 'match_id', 
-'winner', 'me', 'ally1', 'ally2', 'ally3', 'ally4',
+'winner', 'me', 'lane', 'role', 'ally1', 'ally2', 'ally3', 'ally4',
 'enemy1', 'enemy2', 'enemy3',' enemy4', 'enemy5']
+	#Remember that we can use some sort of encryption algortihm to condense for taem
+	#in case we dont actually care about ally1, the positioning is arbitrary anyways
+	#if we wanna sort by lane we can just parse the JSON, itll be easy
 	values = []
 	team_values = []
 
@@ -132,6 +142,8 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 			team['match_id'],
 			team['winner'],
 			team['me'],
+			team['lane'],
+			team['role'],
 			team['allies'][0],
 			team['allies'][1],
 			team['allies'][2],
@@ -176,3 +188,7 @@ def runit(summoner_name,save_json = True, write_SQL = True):
 		add_to_SQL(summoner_id, summoner_name, data_tuple[0], data_tuple[1],'{}_sql.db'.format(summoner_name))
 
 	print('Finish:', time.clock())
+
+'''
+updater, use epoch for api
+'''
