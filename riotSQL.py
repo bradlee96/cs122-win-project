@@ -1,0 +1,167 @@
+import math
+import sqlite3
+'''
+champ winrate - (SELECT win/loss, time_stamp FROM defaultinfo WHERE champion = ? and summoner_id = ?, [])
+gold per min - (SELECT goldEarned, time_stamp, matchDuration FROM defaultinfo WHERE champion = ? and summoner_id = ?, [])
+KDA - (SELECT kills, assists, death, time_stamp FROM defaultinfo WHERE champion = ? and summoner_id = ?, [])
+CS - (SELECT minionsKilled, matchDuration FROM info.db WHERE champion = ? and summoner_id = ?, [])
+
+Notes: changed timestamp to time_stamp; winner is 1, loser is 0 so I changed that from t/f; named the table defaultinfo
+time_interval is weeks?
+'''
+time_start = 1398902400
+time_end = 1453593600
+
+info = sqlite3.connect('info.db')
+cursor = info.cursor()
+
+def pick_time_interval(start_date, end_date):
+    #date = "mm-dd-yyyy"
+    start = time_start + start_date[0:2] *  2419200 + \
+            start_date[3:5] * 86400 + start_date[6:10] * 31536000
+    end = time_end + end_date[0:2] *  2419200 + \
+          end_date[3:5] * 86400 + end_date[6:10] * 31536000
+    return start,end
+
+def get_sql_info(stat, values, where_statement):
+	if stat == "winrate":
+		select_statement = "SELECT time_stamp, winner FROM defaultinfo"
+	elif stat == "gold per minute":
+		select_statement = "SELECT time_stamp, matchDuration, goldEarned FROM defaultinfo "
+	elif stat == "KDA":
+		select_statement = "SELECT time_stamp, matchDuration, kills, assists, deaths FROM defaultinfo "
+	elif stat == "CS":
+		select_statement = "SELECT time_stamp, matchDuration, minionsKilled FROM defaultinfo "
+	elif stat == "wards placed":
+		select_statement = "SELECT time_stamp, matchDuration, wardsPlaced FROM defaultinfo"
+
+	full_statement = stelect_statement + where_statement
+	result = cursor.execute(full_statement, values)
+	rv = result.fetchall()
+
+	return rv
+
+def get_graph_data(stat, rv, start, interval):
+	return_values = [[]] * num_divisions
+		print(len(return_values))
+		for single_match in rv:
+			print(single_match[1])
+			division = math.floor((single_match[0] - start) / interval)
+			print('division', division)
+			if stat == "winrate":
+				return_values[division].append(single_match[1])
+			if stat == "CS" or stat == "wards placed" or stat == "gold per minute":
+				return_values[division].append(single_match[2] / single_match[1])
+			if stat == "KDA":
+				return_values[division].append((single_match[2] + single_match[3]) / single_match[4])
+		print(return_values)
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+	 return return_values
+
+def sql_query(summoner, champion, stat, time_interval, start_date, end_date):
+	# interval is a number of weeks (integer)
+	interval = time_interval * 604800
+	num_divisions = math.ceil((time_end - time_start) / interval)
+
+	start, end = pick_time_interval(start_date, end_date)
+	
+	values = [summoner, start_date, end_date]
+	where_statement = "WHERE summoner_id = ? "
+	where_statement += "AND time_stamp >= ? AND time_stamp <= ?"
+	if champion != None:
+		where_statement += "AND champion = ?"
+		values.append(champion)
+
+	rv = get_sql_info(stat, start, interval, values, where_statement)
+	return_values = get_graph_data(stat, rv, start, interval)
+
+	return return_values
+
+
+
+
+
+
+
+
+
+
+
+'''	
+	if stat == "winrate":
+		select_statement = "SELECT winner, time_stamp FROM defaultinfo "
+		full_statement = select_statement + where_statement
+		print(full_statement)
+		print(where_statement)
+		result = cursor.execute(full_statement, values)
+		rv = result.fetchall()
+		print(rv)
+		
+		return_values = [0] * num_divisions
+		print(len(return_values))
+		for single_match in rv:
+			print(single_match[1])
+			division = math.floor((single_match[1] - start) / interval)
+			print('division', division)
+			if single_match[1] == 1:
+				return_values[division].append(1)
+			else:
+				return_values[division].append(0)
+		print(return_values)
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+			
+	elif stat == "gold per minute":
+		select_statement = "SELECT goldEarned, time_stamp, matchDuration FROM defaultinfo "
+		full_statement = select_statement + where_statement
+		result = cursor.execute(full_statement, values)
+		rv = result.fetchall()
+		
+		return_values = [[]] * num_divisions
+		for single_match in rv:
+			division = math.floor((single_match[1] - start) / interval)
+			return_values[division].append(single_match[0] / single_match[2])
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+			
+	elif stat == "KDA":
+		select_statement = "SELECT kills, assists, deaths, time_stamp FROM defaultinfo "
+		full_statement = select_statement + "WHERE summoner_id = ? " + where_statement
+		result = cursor.execute(full_statement, values)
+		rv = result.fetchall()
+		
+		return_values = [[]] * num_divisions
+		for single_match in rv:
+			division = math.floor((single_match[3] - start) / interval)
+			return_values[division].append((single_match[0] + single_match[1]) / single_match[2])
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+
+	elif stat == "CS":
+		select_statement = "SELECT minionsKilled, matchDuration, time_stamp FROM defaultinfo "
+		full_statement = select_statement + where_statement
+		result = cursor.execute(full_statement, values)
+		rv = result.fetchall()
+		
+		return_values = [[]] * num_divisions
+		for single_match in rv:
+			division = math.floor((single_match[2] - start) / interval)
+			return_values[division].append(single_match[0] / single_match[1])
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+
+	elif stat == "wards placed":
+		select_statement = "SELECT wardsPlaced, matchDuration, time_stamp FROM defaultinfo"
+		full_statement = select_statement + where_statement
+		result = cursor.execute(full_statement, values)
+		rv = result.fetchall()
+
+		return_values = [[]] * num_divisions
+		for single_match in rv:
+			division = math.floor((single_match[2]) - start / interval)
+			return_values[division].append(single_match[0] / single_match[1])
+		for i,j in enumerate(return_values):
+			return_values[i] = sum(j) / len(j)
+	return return_values
+'''
