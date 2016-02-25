@@ -60,7 +60,7 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 
 	return bigdict
 
-def suggest(data, allies, enemies, lane, role):
+def suggest(data, allies, enemies):
 	'''
 	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
 	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
@@ -103,5 +103,9 @@ def runit(filename):
 		json_data.close()
 	
 		learned = calculate_win_rate_per_champion_wrt_others(d)	
-		print(suggest(learned,['janna','kalista','braum'],['kassadin']))
-		print(suggest(learned,['kassadin'],['janna','kalista']))
+		print(learned)
+		print(suggest(learned,['janna'],['kassadin']))
+		print(suggest(learned,['kassadin'],['janna']))
+		print(suggest(learned,['shyvana'],[]))
+
+runit('ghibli studios_team.json')
