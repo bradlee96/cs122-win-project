@@ -18,6 +18,7 @@ up to, say, like 50 games.
 '''
 import time
 import json
+import math
 # g1 = {'winner': 1, 'me': 'malphite',
 # 'allies': ['janna', 'quinn', 'ahri', 'warwick'], 
 # 'enemies': ['ashe', 'braum', 'victor', 'rammus', 'shen']}
@@ -40,6 +41,11 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 	'''
 	Basically just want to add a bunch of shit so I can get some probs later
 	[champ][allies/enemies][ally/enemy][[0,0]]
+
+	Think about specific comopositions, the global weighting does not take that into account. 
+	Eg. Play a lot of Annie, but only 1 game with Annie and shen
+
+	1 game of Annie and Shen, lost, but 1000 games of Annie
 	'''
 	bigdict = {}
 	start_time = time.clock()
@@ -60,12 +66,35 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 
 	return bigdict
 
+def get_most_played(data):
+	'''
+	.85/(1+e**-5(.05x-.25)) + .15
+
+	-1/(x/(.75e)+1.1) + 1
+	'''
+	champ_count_dict = {}
+	for match in data:
+		if not match['me'] in champ_count_dict.keys():
+			champ_count_dict[match['me']] = 1
+		else:
+			champ_count_dict[match['me']] += 1
+
+	most_played = max(champ_count_dict)
+	most_played_count = champ_count_dict[most_played]
+	if most_played_count > 50:
+		most_played_count = 50
+
+	weighter = lambda x: 1 - e**(x / (most_played_count / 2))
+	return weighter
+
 def suggest(data, allies, enemies):
 	'''
 	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
 	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
 	Do the same thing for enemies
 	then we add them all up
+
+	Also take into account how recent the champ was played 
 
 	More ideas: add some factor for confidence(# of games played)
 
@@ -75,15 +104,15 @@ def suggest(data, allies, enemies):
 	for champ in data:
 		dic[champ] = {}
 		for ally in data[champ]['allies']:
-			dic[champ][ally] = normalize(sum(data[champ]['allies'][ally])) * data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
+			dic[champ][ally] = data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
 		for enemy in data[champ]['enemies']:
-			dic[champ][enemy] = normalize(sum(data[champ]['enemies'][enemy])) * data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
+			dic[champ][enemy] = data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
 
 
 	final_result = ['', 0]
 	for champ in dic:
 		fitness = 0
-		normalizer = 0.0001
+		normalizer = 1
 		for guy in allies + enemies:
 			try:
 				fitness += dic[champ][guy]
@@ -96,19 +125,18 @@ def suggest(data, allies, enemies):
 			final_result = [champ, fitness]
 
 	return final_result
-	
-def normalize(games_with_champ):
-	return .85/(1 + math.e **(-5(.05x - .25))) + .15
 
 def runit(filename):
 	with open(filename) as json_data:
 		d = json.load(json_data)
 		json_data.close()
 	
-		learned = calculate_win_rate_per_champion_wrt_others(d)	
-		print(learned)
-		print(suggest(learned,['janna'],['kassadin']))
-		print(suggest(learned,['kassadin'],['janna']))
-		print(suggest(learned,['shyvana'],[]))
+	learned = calculate_win_rate_per_champion_wrt_others(d)	
+	print(learned)
+	print(suggest(learned,['janna'],['kassadin']))
+	print(time.clock())
+	print(suggest(learned,['kassadin'],['janna']))
+	print(time.clock())
+	print(suggest(learned,['shyvana'],[]))
 
 runit('ghibli studios_team.json')
