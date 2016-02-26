@@ -75,9 +75,9 @@ def suggest(data, allies, enemies):
 	for champ in data:
 		dic[champ] = {}
 		for ally in data[champ]['allies']:
-			dic[champ][ally] = data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
+			dic[champ][ally] = normalize(sum(data[champ]['allies'][ally])) * data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
 		for enemy in data[champ]['enemies']:
-			dic[champ][enemy] = data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
+			dic[champ][enemy] = normalize(sum(data[champ]['enemies'][enemy])) * data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
 
 
 	final_result = ['', 0]
@@ -96,6 +96,9 @@ def suggest(data, allies, enemies):
 			final_result = [champ, fitness]
 
 	return final_result
+	
+def normalize(games_with_champ):
+	return .85/(1 + math.e **(-5(.05x - .25))) + .15
 
 def runit(filename):
 	with open(filename) as json_data:
