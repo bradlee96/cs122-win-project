@@ -66,6 +66,14 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 
 	return bigdict
 
+def get_num_games_per_champ(matchlist):
+	champ_dict = {}
+	for match in matchlist:
+		champ_dict[match['me']] = champ_dict.get(match['me'], 0) + 1
+	
+	return champ_dict
+	
+'''
 def get_most_played(data):
 	'''
 	.85/(1+e**-5(.05x-.25)) + .15
@@ -86,8 +94,9 @@ def get_most_played(data):
 
 	weighter = lambda x: 1 - e**(x / (most_played_count / 2))
 	return weighter
+'''
 
-def suggest(data, allies, enemies):
+def suggest(data, champ_dict, allies, enemies):
 	'''
 	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
 	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
@@ -104,18 +113,19 @@ def suggest(data, allies, enemies):
 	for champ in data:
 		dic[champ] = {}
 		for ally in data[champ]['allies']:
-			dic[champ][ally] = data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
+			dic[champ][ally] = normalize(sum(data[champ]['allies'][ally])) * data[champ]['allies'][ally][0] / sum(data[champ]['allies'][ally])
 		for enemy in data[champ]['enemies']:
-			dic[champ][enemy] = data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
+			dic[champ][enemy] = normalize(sum(data[champ]['enemies'][enemy])) * data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
 
 
 	final_result = ['', 0]
 	for champ in dic:
+		normalizing_for_champ_experience = (-1) / (((4 * champ_dict[champ]) / (3 * math.e)) + 1.1) + 1
 		fitness = 0
 		normalizer = 1
 		for guy in allies + enemies:
 			try:
-				fitness += dic[champ][guy]
+				fitness += normalizing_for_champ_experience *dic[champ][guy]
 				normalizer += 1
 			except KeyError:
 				pass
@@ -125,6 +135,9 @@ def suggest(data, allies, enemies):
 			final_result = [champ, fitness]
 
 	return final_result
+
+def normalize(games_with_champ):
+	return .85/(1 + math.e **(-5(.05x - .25))) + .15
 
 def runit(filename):
 	with open(filename) as json_data:
