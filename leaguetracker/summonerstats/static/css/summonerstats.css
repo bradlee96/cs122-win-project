@@ -1,0 +1,236 @@
+* {
+  font-family: 'Titillium Web';
+}
+*::selection {
+  background: #000000;
+}
+html, body {
+  height: 100%;
+}
+body {
+  background-color: #5BCC70;
+  color: #FFFFFF;
+  padding-left: 0px;
+  width: 100%;
+  display: table;
+}
+input {
+  vertical-align: top;
+}
+input[type=text] {
+  font-size: 18px;
+  text-indent: 30px;
+  color: #000000;
+}
+input[type=checkbox] {
+  margin-right: 5px;
+}
+table, th, td {
+  border: 2px solid black;
+  padding: 15px;
+}
+th {
+  font-size: 16px;
+  text-align: center;
+}
+legend {
+  font-size: 16px;
+  color: #FFFFFF;
+}
+.page-header h1, .page-header h1 a, .page-header h1 a:visited, .page-header h1 a:active {
+  color: #FFFFFF;
+  font-size: 32pt;
+  text-decoration: none;
+  text-align: center;
+}
+.page-header {
+  background-color: #00C066;
+  margin-top: 0;
+  padding: 1px 20px 10px 40px;
+}
+.body {
+  padding-left: 10px;
+}
+.page-footer {
+  font-size: 12px;
+  text-align: center;
+  background: #00C966;
+  display: table-row;
+  height: 110px;
+}
+.description {
+  padding-top: 50px;
+}
+.search-text {
+  background-color: #ECECEC;
+	border-radius:5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
+  width: 500px;
+  height: 50px;
+  border: 0;
+  outline: none;
+}
+.search-button {
+background-color: #ECECEC;
+margin-left: -20px;
+width: 50px;
+height: 50px;
+border-radius:5px;
+-moz-border-radius:5px;
+-webkit-border-radius:5px;
+border: 0;
+background-image: url('../img/search.png');
+background-size: 30px 30px;
+background-repeat: no-repeat;
+background-position: center center;
+}
+.summoner {
+  font-size: 20px;
+  text-align: center;
+  color: #FFFF00;
+}
+.stats {
+  margin-left: 30px;
+  width: 400px;
+  float: left;
+}
+.interactive-left {
+  width: 430px;
+  float: left;
+}
+.interactive-right {
+  margin-left: 0px;
+  margin-top: -125px;
+  width: 430px;
+  float: left;
+}
+.options {
+  margin-top: -100px;
+}
+#search {
+  text-align: center;
+  padding-top: 150px;
+}
+#options {
+  color: #FFFFFF;
+  position: relative;
+  text-align: center;
+  left: 50px;
+  width: 150px;
+  border: 2px solid;
+  padding: 10px;
+}
+#options-button {
+  color: #666666;
+  background-color: #ECECEC;
+  border-radius:3px;
+	-moz-border-radius:3px;
+	-webkit-border-radius:3px;
+  border: 0px;
+}
+#cs-container {
+  width: 400px;
+  height: 300px;
+  margin: 0 auto;
+}
+.fa-2x {
+  font-size: 2em;
+}
+.fa:not(.fa-options) {
+  position: relative;
+  display: table-cell;
+  width: 30px;
+  height: 36px;
+  text-align: center;
+  vertical-align: middle;
+  font-size:20px;
+}
+.fa-options {
+  position: relative;
+  display: table-cell;
+  width: 100px;
+  height: 36px;
+  text-align: center;
+  vertical-align: middle;
+  font-size:20px;
+}
+.main-menu:hover,nav.main-menu.expanded {
+  width:450px;
+  overflow:visible;
+}
+.main-menu {
+  background: rgba(2, 118, 253,0.80);
+  border-right:1px solid #e5e5e5;
+  position:fixed;
+  top:0;
+  bottom:0;
+  height:100%;
+  left:0;
+  width:30px;
+  overflow:hidden;
+  -webkit-transition:width .05s linear;
+  transition:width .05s linear;
+  -webkit-transform:translateZ(0) scale(1,1);
+  z-index:1000;
+}
+.main-menu>ul {
+  margin:7px 0;
+}
+.main-menu li {
+  position:relative;
+  display:block;
+  width:450px;
+  color:#FFFFFF;
+}
+.main-menu li>a {
+  position:relative;
+  display:table;
+  border-collapse:collapse;
+  border-spacing:0;
+  color:#FFFFFF;
+  font-size: 14px;
+  text-decoration:none;
+  -webkit-transform:translateZ(0) scale(1,1);
+  -webkit-transition:all .1s linear;
+  transition:all .1s linear;
+}
+.main-menu .nav-text {
+  position:relative;
+  display:table-cell;
+  vertical-align:middle;
+  width:419px;
+  font-family: 'Titillium Web', sans-serif;
+}
+.main-menu>ul.logout {
+position:absolute;
+left:0;
+bottom:0;
+}
+.no-touch .scrollable.hover {
+  overflow-y:hidden;
+}
+.no-touch .scrollable.hover:hover {
+  overflow-y:auto;
+  overflow:visible;
+  }
+a:hover,a:focus {
+  text-decoration:none;
+}
+nav {
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  -o-user-select:none;
+  user-select:none;
+}
+nav ul,nav li {
+  outline:0;
+  margin:0;
+  padding:0;
+}
+.main-menu li:hover>a,nav.main-menu li.active>a,.dropdown-menu>li>a:hover,.dropdown-menu>li>a:focus,.dropdown-menu>.active>a,.dropdown-menu>.active>a:hover,.dropdown-menu>.active>a:focus,.no-touch .dashboard-page nav.dashboard-menu ul li:hover a,.dashboard-page nav.dashboard-menu ul li.active a
+{
+  color:#FFBBFF;
+  background-color:#5fa2db;
+}

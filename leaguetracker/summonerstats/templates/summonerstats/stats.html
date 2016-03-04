@@ -1,0 +1,212 @@
+{% extends 'summonerstats/base.html' %}
+
+{% block content %}
+  {% if summoner %}
+    <div class='stats-page'>
+      <div class='summoner'>
+          <p>Summoner: {{ summoner.summoner_name }}</p>
+      </div>
+      <br>
+      <div style="width: 100%; overflow: hidden;">
+        <div class='stats'>
+          <table>
+            <tr>
+              <th colspan="2">Lifetime Statistics (per Game):</th>
+            </tr>
+            <tr>
+              <td>Win Rate ({{ summoner.matches_played }} games played)*</td>
+              <td>{{ summoner.get_win_rate }}</td>
+            </tr>
+            <tr>
+              <td>Creep Score (CS)</td>
+              <td>{{ summoner.cs|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Kills</td>
+              <td>{{ summoner.kills|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Deaths</td>
+              <td>{{ summoner.deaths|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Assists</td>
+              <td>{{ summoner.assists|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Kill+Assist:Death Ratio (KDA)</td>
+              <td>{{ summoner.kda|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Total Gold</td>
+              <td>{{ summoner.gold|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>CS per Minute</td>
+              <td>{{ summoner.cs_per_min|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Gold per Minute</td>
+              <td>{{ summoner.gold_per_min|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Wards Placed</td>
+              <td>{{ summoner.wards_placed|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Wards Killed</td>
+              <td>{{ summoner.wards_killed|floatformat }}</td>
+            </tr>
+          </table>
+          <p>*Clearly not per game</p>
+        </div>
+        <div class="interactive-left">
+          <div class='charts'>
+            <div id="cs-container"></div>
+          </div>
+          <div class="options">
+          </div>
+        </div>
+        <div class="interactive-right">
+
+        </div>
+      </div>
+      <div class="options-area">
+        <nav class="main-menu">
+          <ul>
+            <li>
+              <a href="{% url 'home' %}">
+                <i class="fa fa-home fa-2x"></i>
+                <span class="nav-text">
+                  Home
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'about' %}">
+                <i class="fa fa-about fa-2x"></i>
+                <span class="nav-text">
+                  About
+                </span>
+              </a>
+            </li>
+            <br>
+            <br>
+            <br>
+            <li>
+              <i class="fa fa-options fa-2x"></i>
+              <span class="nav-text">
+                Graphing Options
+              </span>
+            </li>
+            <li>
+              <form id="options" name="statisticForm" method="get">
+                <legend>Options:</legend>
+                <fieldset>
+                  <input type="checkbox" name="statistic" value="cs">Creep Score (CS)<br>
+                  <input type="checkbox" name="statistic" value="kills">Kills<br>
+                  <input type="checkbox" name="statistic" value="deaths">Deaths<br>
+                  <input type="checkbox" name="statistic" value="assists">Assists<br>
+                  <input type="checkbox" name="statistic" value="kda">KDA<br>
+                  <input type="checkbox" name="statistic" value="gold">Gold<br>
+                  <input type="checkbox" name="statistic" value="cspermin">CS per Minute<br>
+                  <input type="checkbox" name="statistic" value="goldpermin">Gold per Minute<br>
+                  <input type="checkbox" name="statistic" value="wardsplaced">Wards Placed<br>
+                  <input type="checkbox" name="statistic" value="wardskilled">Wards Killed<br>
+                  <br>
+                  <input type="submit" id="options-button" value="Graph!" onClick="">
+                </fieldset>
+              </form>
+            </li>
+          </ul>
+          <ul class="logout">
+            <li>
+             <a href="{% url 'home' %}">
+                <i class="fa fa-power-off fa-2x"></i>
+                <span class="nav-text">
+                  Logout
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  {% else %}
+    <p>Not a valid summoner.</p>
+  {% endif %}
+  <br>
+  <br>
+  <script>
+      $(function () {
+          timeStart = {{ time_start|safe }};
+          csValues = {{ cs_values|safe }};
+          goldValues = {{ gold_values|safe }}
+          for (i = 0; i < csValues.length; i++) {
+              if (csValues[i] == 0) {
+                csValues[i] = null;
+                goldValues[i] = null;
+              }
+          }
+          timeInterval = {{ time_interval }}
+          console.log(timeInterval)
+          console.log(csValues);
+          console.log(timeStart);
+          console.log(Date.UTC(timeStart[0], timeStart[1], timeStart[2]));
+          $('#cs-container').highcharts({
+              chart: {
+                  type: 'line',
+                  zoomType: 'x',
+                  marginBottom: 105
+              },
+              title: {
+                  text: 'Average Creep Score (CS) per Week'
+              },
+              subtitle: {
+                  text: 'The omission of certain data points represent times when no games were played.'
+              },
+              credits: {
+                  text: 'Zoom by dragging the graph with your mouse.',
+                  position: {
+                      align: 'center'
+                  },
+                  href: null
+              },
+              xAxis: {
+                  startOfWeek: 0,
+                  tickInterval: timeInterval,
+                  type: 'datetime',
+                  labels: {
+                      rotation: -70,
+                      formatter:
+                      function () {
+                          return Highcharts.dateFormat('%b %d, %Y', this.value)
+                      }
+                  }
+              },
+              yAxis: {
+                  title: {
+                      text: 'Creep Score (CS)'
+                  },
+              },
+              legend: {
+                  enabled: false
+              },
+              tooltip: {
+                  valueSuffix: ' CS'
+              },
+              series: [{
+                  name: 'Creep Score',
+                  data: csValues,
+                  pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                  pointInterval: timeInterval,
+                  lineWidth : 0,
+                  marker : {
+                    enabled : true,
+                    radius : 3
+                  }
+              }]
+          });
+        });
+    </script>
+{% endblock %}

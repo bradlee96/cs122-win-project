@@ -1,0 +1,10 @@
+{% extends 'summonerstats/base.html' %}
+
+{% block content %}
+  <div>
+    <form id="search" name="summonersearch">
+      <input type="text" class="search-text" name="summoner" placeholder="Enter the Summoner's name."/>
+      <input type="button" class="search-button" onClick="getSummoner()"/>
+    </form>
+  </div>
+{% endblock %}
