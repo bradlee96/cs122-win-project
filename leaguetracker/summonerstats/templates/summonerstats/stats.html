@@ -90,6 +90,14 @@
                 </span>
               </a>
             </li>
+            <li>
+              <a href="{% url 'championselect' %}">
+                <i class="fa fa-championselect fa-2x"></i>
+                <span class="nav-text">
+                  Champion Recommender
+                </span>
+              </a>
+            </li>
             <br>
             <br>
             <br>
@@ -103,6 +111,12 @@
               <form id="options" name="statisticForm" method="get">
                 <legend>Options:</legend>
                 <fieldset>
+                    <input type="radio" name="interval" value="Year">1 Year (365.25 Days)<br>
+                    <input type="radio" name="interval" value="30 Day Period">30 Day Period<br>
+                    <input type="radio" name="interval" value="Week">1 Week<br>
+                    <input type="radio" name="interval" value="Day">1 Day<br>
+                </fieldset>
+                <fieldset>
                   <input type="checkbox" name="statistic" value="cs">Creep Score (CS)<br>
                   <input type="checkbox" name="statistic" value="kills">Kills<br>
                   <input type="checkbox" name="statistic" value="deaths">Deaths<br>
@@ -114,8 +128,8 @@
                   <input type="checkbox" name="statistic" value="wardsplaced">Wards Placed<br>
                   <input type="checkbox" name="statistic" value="wardskilled">Wards Killed<br>
                   <br>
-                  <input type="submit" id="options-button" value="Graph!" onClick="">
                 </fieldset>
+                <input type="submit" id="options-button" value="Graph!" onClick="">
               </form>
             </li>
           </ul>
@@ -140,6 +154,8 @@
   <script>
       $(function () {
           timeStart = {{ time_start|safe }};
+          timeInterval = {{ time_interval }}
+          timeIntervalName = "{{ time_interval_name }}"
           csValues = {{ cs_values|safe }};
           goldValues = {{ gold_values|safe }}
           for (i = 0; i < csValues.length; i++) {
@@ -148,19 +164,18 @@
                 goldValues[i] = null;
               }
           }
-          timeInterval = {{ time_interval }}
           console.log(timeInterval)
           console.log(csValues);
           console.log(timeStart);
           console.log(Date.UTC(timeStart[0], timeStart[1], timeStart[2]));
           $('#cs-container').highcharts({
               chart: {
-                  type: 'line',
+                  type: 'spline',
                   zoomType: 'x',
                   marginBottom: 105
               },
               title: {
-                  text: 'Average Creep Score (CS) per Week'
+                  text: 'Average Creep Score (CS) per ' + timeIntervalName
               },
               subtitle: {
                   text: 'The omission of certain data points represent times when no games were played.'
@@ -173,14 +188,14 @@
                   href: null
               },
               xAxis: {
+                  type: 'datetime',
                   startOfWeek: 0,
                   tickInterval: timeInterval,
-                  type: 'datetime',
                   labels: {
                       rotation: -70,
                       formatter:
                       function () {
-                          return Highcharts.dateFormat('%b %d, %Y', this.value)
+                          return Highcharts.dateFormat('%b %d, %y', this.value)
                       }
                   }
               },
@@ -193,6 +208,7 @@
                   enabled: false
               },
               tooltip: {
+                  xDateFormat: 'Start of Period: %b %d, %Y',
                   valueSuffix: ' CS'
               },
               series: [{

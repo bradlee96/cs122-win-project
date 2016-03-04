@@ -37,6 +37,10 @@ legend {
   font-size: 16px;
   color: #FFFFFF;
 }
+fieldset {
+  float: left;
+  width: 50%;
+}
 .page-header h1, .page-header h1 a, .page-header h1 a:visited, .page-header h1 a:active {
   color: #FFFFFF;
   font-size: 32pt;
@@ -115,9 +119,8 @@ background-position: center center;
 #options {
   color: #FFFFFF;
   position: relative;
-  text-align: center;
   left: 50px;
-  width: 150px;
+  width: 250px;
   border: 2px solid;
   padding: 10px;
 }
@@ -149,7 +152,7 @@ background-position: center center;
 .fa-options {
   position: relative;
   display: table-cell;
-  width: 100px;
+  width: 55px;
   height: 36px;
   text-align: center;
   vertical-align: middle;
@@ -160,7 +163,7 @@ background-position: center center;
   overflow:visible;
 }
 .main-menu {
-  background: rgba(2, 118, 253,0.80);
+  background: rgba(159, 121, 238, 0.90);
   border-right:1px solid #e5e5e5;
   position:fixed;
   top:0;
