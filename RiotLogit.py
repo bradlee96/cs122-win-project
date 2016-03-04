@@ -4,7 +4,7 @@ import pandas as pd
 import statsmodels.api as sm
 import numpy as np
 
-DATABASE_FILE_NAME = 'info.db'
+DATABASE_FILE_NAME = 'ghibli studios_sql.db'
 
 def get_data(dbfilename):
 	conn = sqlite3.connect('{}'.format(dbfilename))
