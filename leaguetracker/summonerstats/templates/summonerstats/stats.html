@@ -5,16 +5,25 @@
     <div class='stats-page'>
       <div class='summoner'>
           <p>Summoner: {{ summoner.summoner_name }}</p>
+        <form id="search-stats" name="summonersearch">
+          <input type="text" class="small-search-text" name="summoner" placeholder="Enter another Summoner's name."/>
+          <input type="button" class="small-search-button" onClick="getSummoner()"/>
+        </form>
       </div>
       <br>
-      <div style="width: 100%; overflow: hidden;">
-        <div class='stats'>
+      <div class='all-stats'>
+        {% if chart %}
+          <div class='lifetime-stats-with-chart'>
           <table>
+        {% else %}
+          <div class='lifetime-stats-without-chart'>
+          <table style="margin: 0px auto;">
+        {% endif %}
             <tr>
               <th colspan="2">Lifetime Statistics (per Game):</th>
             </tr>
             <tr>
-              <td>Win Rate ({{ summoner.matches_played }} games played)*</td>
+              <td>Win Rate ({{ summoner.matches_played }} games played)</td>
               <td>{{ summoner.get_win_rate }}</td>
             </tr>
             <tr>
@@ -58,18 +67,40 @@
               <td>{{ summoner.wards_killed|floatformat }}</td>
             </tr>
           </table>
-          <p>*Clearly not per game</p>
         </div>
-        <div class="interactive-left">
-          <div class='charts'>
-            <div id="cs-container"></div>
-          </div>
-          <div class="options">
-          </div>
-        </div>
-        <div class="interactive-right">
+        {% if chart %}
+          {% if large %}
+            <div class="large-charts">
+              <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-1" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-2" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-3" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-4" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-5" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-6" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-7" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-8" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-9" style="width: 800px; height: 500px;"></div>
+            </div>
+          {% else %}
+            <div class="interactive left">
+                <div id="cs-container-0" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-2" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-4" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-6" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-8" style="width: 400px; height: 300px;"></div>
+            </div>
+            <div class="interactive right">
+                <div id="cs-container-1" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-3" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-5" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-7" style="width: 400px; height: 300px;"></div>
+                <div id="cs-container-9" style="width: 400px; height: 300px;"></div>
+            </div>
+          {% endif %}
+        {% else %}
 
-        </div>
+        {% endif %}
       </div>
       <div class="options-area">
         <nav class="main-menu">
@@ -98,9 +129,6 @@
                 </span>
               </a>
             </li>
-            <br>
-            <br>
-            <br>
             <li>
               <i class="fa fa-options fa-2x"></i>
               <span class="nav-text">
@@ -109,38 +137,45 @@
             </li>
             <li>
               <form id="options" name="statisticForm" method="get">
-                <legend>Options:</legend>
+                <legend class='main'>Data Options:</legend>
                 <fieldset>
-                    <input type="radio" name="interval" value="Year">1 Year (365.25 Days)<br>
-                    <input type="radio" name="interval" value="30 Day Period">30 Day Period<br>
-                    <input type="radio" name="interval" value="Week">1 Week<br>
-                    <input type="radio" name="interval" value="Day">1 Day<br>
+                  <legend class='sub'>Time Intervals*</legend>
+                  <input id="ti1" type="radio" name="interval" value="Year" checked>
+                  <label for="ti1">1 Year (365.25 Days)</label><br>
+                  <input id="ti2" type="radio" name="interval" value="30 Day Period">
+                  <label for="ti2">30 Day Period</label><br>
+                  <input id="ti3" type="radio" name="interval" value="Week">
+                  <label for="ti3">1 Week</label><br>
+                  <input id="ti4" type="radio" name="interval" value="Day">
+                  <label for="ti4">1 Day</label><br>
                 </fieldset>
                 <fieldset>
-                  <input type="checkbox" name="statistic" value="cs">Creep Score (CS)<br>
-                  <input type="checkbox" name="statistic" value="kills">Kills<br>
-                  <input type="checkbox" name="statistic" value="deaths">Deaths<br>
-                  <input type="checkbox" name="statistic" value="assists">Assists<br>
-                  <input type="checkbox" name="statistic" value="kda">KDA<br>
-                  <input type="checkbox" name="statistic" value="gold">Gold<br>
-                  <input type="checkbox" name="statistic" value="cspermin">CS per Minute<br>
-                  <input type="checkbox" name="statistic" value="goldpermin">Gold per Minute<br>
-                  <input type="checkbox" name="statistic" value="wardsplaced">Wards Placed<br>
-                  <input type="checkbox" name="statistic" value="wardskilled">Wards Killed<br>
-                  <br>
+                  <legend class='sub'>Role*</legend>
+                  <input id="r1" type="radio" name="role" value="All" checked>
+                  <label for="r1">All</label><br>
+                  <input id="r2" type="radio" name="role" value="Top">
+                  <label for="r2">Top</label><br>
+                  <input id="r3" type="radio" name="role" value="Jungle">
+                  <label for="r3">Jungle</label><br>
+                  <input id="r4" type="radio" name="role" value="Mid">
+                  <label for="r4">Mid</label><br>
+                  <input id="r5" type="radio" name="role" value="AD Carry">
+                  <label for="r5">AD Carry</label><br>
+                  <input id="r6" type="radio" name="role" value="Support">
+                  <label for="r6">Support</label><br>
                 </fieldset>
+                <legend class='main'>Graph Options:</legend>
+                <fieldset>
+                  <legend class='sub'>Graph Size*</legend>
+                  <input id="gs1" type="radio" name="chartsize" value="small" checked>
+                  <label for="gs1">Small</label><br>
+                  <input id="gs2" type="radio" name="chartsize" value="large">
+                  <label for="gs2">Large</label><br>
+                </fieldset>
+                <br><br><br><br><br><br>
                 <input type="submit" id="options-button" value="Graph!" onClick="">
+                <p class='form-caveat'>*Required</p>
               </form>
-            </li>
-          </ul>
-          <ul class="logout">
-            <li>
-             <a href="{% url 'home' %}">
-                <i class="fa fa-power-off fa-2x"></i>
-                <span class="nav-text">
-                  Logout
-                </span>
-              </a>
             </li>
           </ul>
         </nav>
@@ -152,77 +187,686 @@
   <br>
   <br>
   <script>
-      $(function () {
-          timeStart = {{ time_start|safe }};
-          timeInterval = {{ time_interval }}
-          timeIntervalName = "{{ time_interval_name }}"
-          csValues = {{ cs_values|safe }};
-          goldValues = {{ gold_values|safe }}
-          for (i = 0; i < csValues.length; i++) {
-              if (csValues[i] == 0) {
+    $(function () {
+        role = "{{ role }}";
+        timeStart = {{ time_start|safe }};
+        timeInterval = {{ time_interval }};
+        timeIntervalName = "{{ time_interval_name }}";
+        csValues = {{ cs_values|safe }};
+        killValues = {{ kill_values|safe }};
+        deathValues = {{ death_values|safe }};
+        assistValues = {{ assist_values|safe }};
+        kdaValues = {{ kda_values|safe }};
+        goldValues = {{ gold_values|safe }};
+        csPerMinValues = {{ cs_per_min_values|safe }};
+        goldPerMinValues = {{ gold_per_min_values|safe }};
+        wardsPlacedValues = {{ wards_placed_values|safe }};
+        wardsKilledValues = {{ wards_killed_values|safe }};
+        csRegValues = [];
+        killRegValues = [];
+        deathRegValues = [];
+        assistRegValues = [];
+        kdaRegValues = [];
+        goldRegValues = [];
+        csPerMinRegValues = [];
+        goldPerMinRegValues = [];
+        wardsPlacedRegValues = [];
+        wardsKilledRegValues = [];
+        statsSelection = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+        for (i = 0; i < goldValues.length; i++) {
+            if (goldValues[i] == 0) {
                 csValues[i] = null;
+                killValues[i] = null;
+                deathValues[i] = null;
+                assistValues[i] = null;
+                kdaValues[i] = null;
                 goldValues[i] = null;
-              }
-          }
-          console.log(timeInterval)
-          console.log(csValues);
-          console.log(timeStart);
-          console.log(Date.UTC(timeStart[0], timeStart[1], timeStart[2]));
-          $('#cs-container').highcharts({
-              chart: {
-                  type: 'spline',
-                  zoomType: 'x',
-                  marginBottom: 105
-              },
-              title: {
-                  text: 'Average Creep Score (CS) per ' + timeIntervalName
-              },
-              subtitle: {
-                  text: 'The omission of certain data points represent times when no games were played.'
-              },
-              credits: {
-                  text: 'Zoom by dragging the graph with your mouse.',
-                  position: {
-                      align: 'center'
-                  },
-                  href: null
-              },
-              xAxis: {
-                  type: 'datetime',
-                  startOfWeek: 0,
-                  tickInterval: timeInterval,
-                  labels: {
-                      rotation: -70,
-                      formatter:
-                      function () {
-                          return Highcharts.dateFormat('%b %d, %y', this.value)
-                      }
-                  }
-              },
-              yAxis: {
-                  title: {
-                      text: 'Creep Score (CS)'
-                  },
-              },
-              legend: {
-                  enabled: false
-              },
-              tooltip: {
-                  xDateFormat: 'Start of Period: %b %d, %Y',
-                  valueSuffix: ' CS'
-              },
-              series: [{
-                  name: 'Creep Score',
-                  data: csValues,
-                  pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
-                  pointInterval: timeInterval,
-                  lineWidth : 0,
-                  marker : {
-                    enabled : true,
-                    radius : 3
-                  }
-              }]
-          });
+                csPerMinValues[i] = null;
+                goldPerMinValues[i] = null;
+                wardsPlacedValues[i] = null;
+                wardsKilledValues[i] = null;
+            }
+            else {
+                j = Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]) + timeInterval * i
+                csRegValues.push([j, csValues[i]]);
+                killRegValues.push([j, killValues[i]]);
+                deathRegValues.push([j, deathValues[i]]);
+                assistRegValues.push([j, assistValues[i]]);
+                kdaRegValues.push([j, kdaValues[i]]);
+                goldValues[i] = goldValues[i] / 1000;
+                goldRegValues.push([j, goldValues[i]]);
+                csPerMinRegValues.push([j, csPerMinValues[i]]);
+                goldPerMinRegValues.push([j, goldPerMinValues[i]]);
+                wardsPlacedRegValues.push([j, wardsPlacedValues[i]]);
+                wardsKilledRegValues.push([j, wardsKilledValues[i]]);
+            }
+        }
+        console.log(csRegValues)
+        console.log(timeInterval)
+        console.log(csValues);
+        console.log(timeStart);
+        console.log(Date.UTC(timeStart[0], timeStart[1], timeStart[2]));
+        $('#cs-container-0').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Number of Kills<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Kills'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' Kills'
+            },
+            series: [{
+                name: 'Kills',
+                data: killValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(killRegValues).data;
+                })()
+            }]
         });
-    </script>
+        $('#cs-container-1').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Number of Deaths<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Deaths'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' Deaths'
+            },
+            series: [{
+                name: 'Deaths',
+                data: deathValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(deathRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-2').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Number of Assists<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Assists'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' Assists'
+            },
+            series: [{
+                name: 'Assists',
+                data: assistValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(assistRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-3').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average KDA Ratio<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'KDA'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' KDA'
+            },
+            series: [{
+                name: 'KDA',
+                data: kdaValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(kdaRegValues).data;
+                })()
+            }
+          ]
+        });
+        $('#cs-container-4').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Creep Score (CS)<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Creep Score (CS)'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' CS'
+            },
+            series: [{
+                name: 'CS',
+                data: csValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(csRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-5').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Gold Earned<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Gold (in thousands)'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: 'k Gold'
+            },
+            series: [{
+                name: 'Gold',
+                data: goldValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(goldRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-6').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Creep Score (CS) per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Creep Score (CS) per Minute'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' CS per min'
+            },
+            series: [{
+                name: 'CS per Min',
+                data: csPerMinValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(csPerMinRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-7').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Gold per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Gold per Minute (GPM)'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' GPM'
+            },
+            series: [{
+                name: 'GPM',
+                data: goldPerMinValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(goldPerMinRegValues).data;
+                })()
+            }]
+        });
+        $('#cs-container-8').highcharts({
+            chart: {
+                type: 'spline',
+                zoomType: 'x',
+                marginBottom: 105
+            },
+            title: {
+                text: 'Average Number of Wards Placed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+            },
+            subtitle: {
+                text: 'The omission of certain data points represent times when no games were played.'
+            },
+            credits: {
+                text: 'Zoom by dragging the graph with your mouse.',
+                position: {
+                    align: 'center'
+                },
+                href: null
+            },
+            xAxis: {
+                type: 'datetime',
+                startOfWeek: 0,
+                tickInterval: timeInterval,
+                labels: {
+                    rotation: -70,
+                    formatter:
+                    function () {
+                        return Highcharts.dateFormat('%b %d, %y', this.value)
+                    }
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Wards Placed'
+                },
+            },
+            tooltip: {
+                xDateFormat: 'Start of Period: %b %d, %Y',
+                valueDecimals: 1,
+                shared: true,
+                valueSuffix: ' Wards Placed'
+            },
+            series: [{
+                name: 'Wards Placed',
+                data: wardsPlacedValues,
+                pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+                pointInterval: timeInterval,
+                lineWidth : 0,
+                marker : {
+                  enabled : true,
+                  radius : 3
+                }
+            }, {
+                name: 'Expected Value (Regression)',
+                type: 'line',
+                marker: { enabled: false },
+                /* function returns data for trend-line */
+                data: (function() {
+                  return fitData(wardsPlacedRegValues).data;
+              })()
+          }]
+      });
+      $('#cs-container-9').highcharts({
+          chart: {
+              type: 'spline',
+              zoomType: 'x',
+              marginBottom: 105
+          },
+          title: {
+              text: 'Average Number of Wards Killed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+          },
+          subtitle: {
+              text: 'The omission of certain data points represent times when no games were played.'
+          },
+          credits: {
+              text: 'Zoom by dragging the graph with your mouse.',
+              position: {
+                  align: 'center'
+              },
+              href: null
+          },
+          xAxis: {
+              type: 'datetime',
+              startOfWeek: 0,
+              tickInterval: timeInterval,
+              labels: {
+                  rotation: -70,
+                  formatter:
+                  function () {
+                      return Highcharts.dateFormat('%b %d, %y', this.value)
+                  }
+              }
+          },
+          yAxis: {
+              title: {
+                  text: 'Wards Killed'
+              },
+          },
+          tooltip: {
+              xDateFormat: 'Start of Period: %b %d, %Y',
+              valueDecimals: 1,
+              shared: true,
+              valueSuffix: ' Wards Killed'
+          },
+          series: [{
+              name: 'Wards Killed',
+              data: wardsKilledValues,
+              pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
+              pointInterval: timeInterval,
+              lineWidth : 0,
+              marker : {
+                enabled : true,
+                radius : 3
+              }
+          }, {
+              name: 'Expected Value (Regression)',
+              type: 'line',
+              marker: { enabled: false },
+              /* function returns data for trend-line */
+              data: (function() {
+                return fitData(wardsKilledRegValues).data;
+              })()
+          }]
+      });
+  });
+  </script>
 {% endblock %}

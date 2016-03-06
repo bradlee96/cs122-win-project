@@ -2,7 +2,7 @@
   font-family: 'Titillium Web';
 }
 *::selection {
-  background: #000000;
+  background: #bb00ff;
 }
 html, body {
   height: 100%;
@@ -17,13 +17,62 @@ body {
 input {
   vertical-align: top;
 }
-input[type=text] {
+input.large-search-text {
   font-size: 18px;
   text-indent: 30px;
   color: #000000;
+  background-color: #ECECEC;
+	border-radius:5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
+  width: 500px;
+  height: 50px;
+  border: 0;
+  outline: none;
 }
-input[type=checkbox] {
-  margin-right: 5px;
+input.large-search-button {
+  background-color: #ECECEC;
+  margin-left: -20px;
+  width: 50px;
+  height: 50px;
+  border-radius:5px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+  border: 0;
+  background-image: url('../img/search.png');
+  background-size: 30px 30px;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+input.small-search-text {
+  font-size: 16px;
+  text-align: center;
+  color: #000000;
+  background-color: #ECECEC;
+	border-radius:5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
+  width: 300px;
+  height: 30px;
+  border: 0;
+  outline: none;
+}
+input.small-search-button {
+  background-color: #ECECEC;
+  margin-left: -20px;
+  width: 30px;
+  height: 30px;
+  border-radius:5px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+  border: 0;
+  background-image: url('../img/search.png');
+  background-size: 30px 30px;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+label {
+  font-size: 13px;
 }
 table, th, td {
   border: 2px solid black;
@@ -33,8 +82,12 @@ th {
   font-size: 16px;
   text-align: center;
 }
-legend {
+legend.main {
   font-size: 16px;
+  color: #FFFFFF;
+}
+legend.sub {
+  font-size: 14px;
   color: #FFFFFF;
 }
 fieldset {
@@ -65,54 +118,28 @@ fieldset {
 .description {
   padding-top: 50px;
 }
-.search-text {
-  background-color: #ECECEC;
-	border-radius:5px;
-	-moz-border-radius:5px;
-	-webkit-border-radius:5px;
-  width: 500px;
-  height: 50px;
-  border: 0;
-  outline: none;
-}
-.search-button {
-background-color: #ECECEC;
-margin-left: -20px;
-width: 50px;
-height: 50px;
-border-radius:5px;
--moz-border-radius:5px;
--webkit-border-radius:5px;
-border: 0;
-background-image: url('../img/search.png');
-background-size: 30px 30px;
-background-repeat: no-repeat;
-background-position: center center;
-}
 .summoner {
   font-size: 20px;
   text-align: center;
   color: #FFFF00;
 }
-.stats {
+.all-stats {
+  width: 100%;
+  overflow: hidden;
+}
+.lifetime-stats-with-chart {
   margin-left: 30px;
   width: 400px;
   float: left;
 }
-.interactive-left {
-  width: 430px;
+.large-charts {
   float: left;
 }
-.interactive-right {
-  margin-left: 0px;
-  margin-top: -125px;
-  width: 430px;
+.interactive {
+  width: 420px;
   float: left;
 }
-.options {
-  margin-top: -100px;
-}
-#search {
+#search-home {
   text-align: center;
   padding-top: 150px;
 }
@@ -120,7 +147,8 @@ background-position: center center;
   color: #FFFFFF;
   position: relative;
   left: 50px;
-  width: 250px;
+  width: 320px;
+  height: 450px;
   border: 2px solid;
   padding: 10px;
 }
@@ -132,10 +160,12 @@ background-position: center center;
 	-webkit-border-radius:3px;
   border: 0px;
 }
-#cs-container {
-  width: 400px;
-  height: 300px;
+#cs-container-0, #cs-container-1, #cs-container-2, #cs-container-3, #cs-container-4, #cs-container-5, #cs-container-6, #cs-container-7, #cs-container-8, #cs-container-9 {
   margin: 0 auto;
+  margin-bottom: 20px;
+}
+p.form-caveat {
+  font-size: 11px;
 }
 .fa-2x {
   font-size: 2em;
@@ -143,7 +173,7 @@ background-position: center center;
 .fa:not(.fa-options) {
   position: relative;
   display: table-cell;
-  width: 30px;
+  width: 40px;
   height: 36px;
   text-align: center;
   vertical-align: middle;
@@ -152,7 +182,7 @@ background-position: center center;
 .fa-options {
   position: relative;
   display: table-cell;
-  width: 55px;
+  width: 65px;
   height: 36px;
   text-align: center;
   vertical-align: middle;
@@ -161,6 +191,7 @@ background-position: center center;
 .main-menu:hover,nav.main-menu.expanded {
   width:450px;
   overflow:visible;
+  overflow-y: scroll;
 }
 .main-menu {
   background: rgba(159, 121, 238, 0.90);
@@ -183,7 +214,7 @@ background-position: center center;
 .main-menu li {
   position:relative;
   display:block;
-  width:450px;
+  width:420px;
   color:#FFFFFF;
 }
 .main-menu li>a {
@@ -204,11 +235,6 @@ background-position: center center;
   vertical-align:middle;
   width:419px;
   font-family: 'Titillium Web', sans-serif;
-}
-.main-menu>ul.logout {
-position:absolute;
-left:0;
-bottom:0;
 }
 .no-touch .scrollable.hover {
   overflow-y:hidden;
