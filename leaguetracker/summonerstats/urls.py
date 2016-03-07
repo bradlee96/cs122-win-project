@@ -19,6 +19,6 @@ from . import views
 urlpatterns = [
      url(r'^$', views.home, name='home'),
      url(r'^about/$', views.home, name='about'),
-     url(r'^championselect/$', views.home, name='championselect'),
+     url(r'^championselect/$', views.championselect, name='championselect'),
      url(r'^summoner/(?P<summoner_name>[\w\ ]+)/$', views.stats, name='stats')
 ]

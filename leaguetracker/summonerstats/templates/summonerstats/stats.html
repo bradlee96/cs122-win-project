@@ -7,7 +7,7 @@
           <p>Summoner: {{ summoner.summoner_name }}</p>
         <form id="search-stats" name="summonersearch">
           <input type="text" class="small-search-text" name="summoner" placeholder="Enter another Summoner's name."/>
-          <input type="button" class="small-search-button" onClick="getSummoner()"/>
+          <input type="button" id="small-search-button" onClick="getSummoner()"/>
         </form>
       </div>
       <br>
@@ -125,7 +125,7 @@
               <a href="{% url 'championselect' %}">
                 <i class="fa fa-championselect fa-2x"></i>
                 <span class="nav-text">
-                  Champion Recommender
+                  Champion Select Recommendations
                 </span>
               </a>
             </li>
@@ -136,7 +136,7 @@
               </span>
             </li>
             <li>
-              <form id="options" name="statisticForm" method="get">
+              <form id="options" method="get">
                 <legend class='main'>Data Options:</legend>
                 <fieldset>
                   <legend class='sub'>Time Intervals*</legend>

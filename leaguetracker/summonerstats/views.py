@@ -162,6 +162,9 @@ def stats(request, summoner_name):
                     context['time_start'] = get_UTC_time(time_start_category)
     return render(request, 'summonerstats/stats.html', context)
 
+def championselect(request):
+        return render(request, 'summonerstats/championselect.html', {})
+
 def get_UTC_time(epoch_time):
     return list(time.gmtime(epoch_time)[:3])
 

@@ -1,0 +1,32 @@
+{% extends 'summonerstats/base.html' %}
+{% block content %}
+  <div class="champion-select">
+    <form id="champion-select-form">
+      <legend class='champion-select-header'>Champion Select Recommender:</legend>
+      <table>
+        <tr>
+          <td><input type="text" class="small-search-text" name="ally-champion-1" placeholder="Ally Champion 1"/></td>
+          <td><input type="text" class="small-search-text" name="enemy-champion-1" placeholder="Enemy Champion 1"/></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="small-search-text" name="ally-champion-2" placeholder="Ally Champion 2"/></td>
+          <td><input type="text" class="small-search-text" name="enemy-champion-2" placeholder="Enemy Champion 2"/></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="small-search-text" name="ally-champion-3" placeholder="Ally Champion 3"/></td>
+          <td><input type="text" class="small-search-text" name="enemy-champion-3" placeholder="Enemy Champion 3"/></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="small-search-text" name="ally-champion-4" placeholder="Ally Champion 4"/></td>
+          <td><input type="text" class="small-search-text" name="enemy-champion-4" placeholder="Enemy Champion 4"/></td>
+        </tr>
+        <tr>
+          <td><input type="text" READONLY id="recommendation" class="dark-small-search-text" name="player-champion" placeholder="Your Recommended Champion"/></td>
+          <td><input type="text" class="small-search-text" name="enemy-champion-5" placeholder="Enemy Champion 5"/></td>
+        </tr>
+      </table>
+      <br>
+      <input type="submit" id="champion-recommendation-button" value="Get Champion Recommendation" onClick="recommendChampion()"/>
+    </form>
+  </div>
+{% endblock %}

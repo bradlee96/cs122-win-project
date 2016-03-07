@@ -35,7 +35,7 @@ class Summoner(models.Model):
     # Model.refresh_from_db
 
     def get_win_rate(self):
-        return str(100 * self.winrate) + '%'
+        return '{:.2f}'.format(100 * self.winrate) + '%'
 
     def __str__(self):
         return str(self.summoner_id) + ' (' + self.summoner_name + ')'
