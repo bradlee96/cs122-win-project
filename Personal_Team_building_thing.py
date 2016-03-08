@@ -30,11 +30,14 @@ import json
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 DATABASE_FILENAME = 'Fiendish_Codex.db'
 
-def get_dict(filename, summoner_id):
+def get_dict(filename, summoner_id, role):
 	conn = sqlite3.connect('Fiendish_Codex.db')
 	cursor = conn.cursor()
-	match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction JOIN Summoners WHERE Summoners.summoner_id = {}".format(summoner_id)).fetchall()
-
+	if role == "DUO_CARRY" or role == "DUO_SUPPORT":
+		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction JOIN Summoners WHERE summoner_name = '{}' AND lane = '{}' AND role = '{}'".format(summoner_name, "BOTTOM", role)).fetchall()
+	else:
+		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction JOIN Summoners WHERE summoner_name = '{}' AND lane = '{}'".format(summoner_name, role)).fetchall()
+	
 	cleaned_match_list = []
 	for match in match_list:
 		temp = {}
@@ -75,12 +78,15 @@ def calculate_win_rate_per_champion_wrt_others(matchlist):
 
 	return bigdict
 
-def get_num_games_per_champ(matchlist):
-	champ_dict = {}
+def normalize_for_champ_experience(matchlist):
+	champ_experience_normalizer = {}
 	for match in matchlist:
-		champ_dict[match['me']] = champ_dict.get(match['me'], 0) + 1
-	
-	return champ_dict
+		champ_experience_normalizer[match['me']] = champ_experience_normalizer.get(match['me'], 0) + 1
+	for champ in champ_experience_normalizer.keys():
+		games_played = champ_experience_normalizer[champ]
+		champ_experience_normalizer[champ] = (-1) / (((4 * games_played) / (3 * math.e)) + 1.1) + 1
+
+	return champ_experience_normalizer
 	
 '''
 def get_most_played(data):
@@ -101,7 +107,7 @@ def get_most_played(data):
 	return weighter
 '''
 
-def suggest(data, champ_dict, allies, enemies):
+def suggest(data, champ_experience_normalizer, allies, enemies):
 	'''
 	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
 	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
@@ -125,12 +131,12 @@ def suggest(data, champ_dict, allies, enemies):
 
 	final_result = ['', 0]
 	for champ in dic:
-		normalizing_for_champ_experience = (-1) / (((4 * champ_dict[champ]) / (3 * math.e)) + 1.1) + 1
+		champ_experience_normalization_factor = champ_experience_normalizer[champ]
 		fitness = 0
 		normalizer = None
 		for guy in allies + enemies:
 			try:
-				fitness += normalizing_for_champ_experience * dic[champ][guy]
+				fitness += champ_experience_normalization_factor * dic[champ][guy]
 				if normalizer == None:
 					normalizer = 1
 				else:
@@ -149,14 +155,20 @@ def suggest(data, champ_dict, allies, enemies):
 
 
 def normalize(games_with_champ):
-	return .85 / (1 + math.e ** ( -5 * (.05 * games_with_champ - .25))) + .15
+	'''
+	a logistic growth function to weight games played with an ally champ or against an
+	enemy champion. We weight values more if there are more games because the sample
+	size is bigger and therefore more accurate.
+	'''
 
+	return .85 / (1 + math.e ** ( -5 * (.05 * games_with_champ - .25))) + .15
 
 def runit(summoner_name, allies, enemies, role):
 	'''
 	NEed to add default case
 	Need to add SQL stuff
 	'''
+
 	summoner_name = summoner_name.lower()
 	try:
 		summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format((summoner_name.replace(' ','')), key))
@@ -168,8 +180,15 @@ def runit(summoner_name, allies, enemies, role):
 	
 	match_list = get_dict(DATABASE_FILENAME, summoner_id, role)
 	learned = calculate_win_rate_per_champion_wrt_others(match_list)
-	champ_freq = get_num_games_per_champ(match_list)
+	champ_experience_normalizer = normalize_for_champ_experience(match_list)
 
+	for champ in allies:
+		if champ[0:6] == "jarvan":
+			allies.remove(champ)
+			allies.append("jarvaniv")
+			break
+
+	return suggest(learned, champ_experience_normalizer, allies, enemies)
 	# print(learned)
 	# print(suggest(learned,champ_freq,[],[]))
 	# print(time.clock())
