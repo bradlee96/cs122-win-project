@@ -1,4 +1,5 @@
 {% extends 'summonerstats/base_with_sidebar.html' %}
+{% load staticfiles %}
 {% block content %}
   <div class="champion-select-page">
     <div class="champion-select">
@@ -9,6 +10,12 @@
       {% endif %}
       <form id="champion-select-form">
         <legend class='champion-select-header'>Champion Select Recommender:</legend>
+        {% if recommended_champion %}
+          {% with 'img/champions/'|add:recommended_champion|add:'Square.png' as champion_icon %}
+             <img src="{% static champion_icon %}" title="Recommended Champion: {{ recommended_champion }}" height=50px width=50px>
+             <br>
+          {% endwith %}
+        {% endif %}
         <fieldset class='champion-select'>
           <table>
             <tr>

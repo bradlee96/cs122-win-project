@@ -1,190 +1,184 @@
 {% extends 'summonerstats/base.html' %}
 
 {% block content %}
-  {% if summoner %}
-    <div class='stats-page'>
-      <div class='summoner'>
-          <p>Summoner: {{ summoner.summoner_name }}</p>
-        <form id="search-stats" name="summonersearch">
-          <input type="text" class="small-search-text" name="summoner" placeholder="Enter another Summoner's name."/>
-          <input type="button" id="small-search-button" onClick="getSummoner()"/>
-        </form>
-      </div>
-      <br>
-      <div class='all-stats'>
-        {% if chart %}
-          <div class='lifetime-stats-with-chart'>
-            <table class='bordered-table'>
-        {% else %}
-          <div class='lifetime-stats-without-chart'>
-            <table class='bordered-table' style="margin: 0px auto;">
-        {% endif %}
-              <tr>
-                <th colspan="2">Lifetime Statistics (per Game):</th>
-              </tr>
-              <tr>
-                <td>Win Rate ({{ summoner.matches_played }} games played)</td>
-                <td>{{ summoner.get_win_rate }}</td>
-              </tr>
-              <tr>
-                <td>Creep Score (CS)</td>
-                <td>{{ summoner.cs|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Kills</td>
-                <td>{{ summoner.kills|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Deaths</td>
-                <td>{{ summoner.deaths|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Assists</td>
-                <td>{{ summoner.assists|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Kill+Assist:Death Ratio (KDA)</td>
-                <td>{{ summoner.kda|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Total Gold</td>
-                <td>{{ summoner.gold|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>CS per Minute</td>
-                <td>{{ summoner.cs_per_min|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Gold per Minute</td>
-                <td>{{ summoner.gold_per_min|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Wards Placed</td>
-                <td>{{ summoner.wards_placed|floatformat }}</td>
-              </tr>
-              <tr>
-                <td>Wards Killed</td>
-                <td>{{ summoner.wards_killed|floatformat }}</td>
-              </tr>
-            </table>
-          </div>
-          {% if chart %}
-            {% if large %}
-              <div class="large-charts">
-                <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-1" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-2" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-3" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-4" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-5" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-6" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-7" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-8" style="width: 800px; height: 500px;"></div>
-                <div id="cs-container-9" style="width: 800px; height: 500px;"></div>
-              </div>
-            {% else %}
-              <div class="interactive left">
-                <div id="cs-container-0" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-2" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-4" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-6" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-8" style="width: 400px; height: 300px;"></div>
-              </div>
-              <div class="interactive right">
-                <div id="cs-container-1" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-3" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-5" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-7" style="width: 400px; height: 300px;"></div>
-                <div id="cs-container-9" style="width: 400px; height: 300px;"></div>
-              </div>
-            {% endif %}
-          {% else %}
-
-          {% endif %}
+  <div class='stats-page'>
+    <div class='summoner'>
+        <p>Summoner: {{ summoner.summoner_name }}</p>
+      <form id="search-stats" name="summonersearch">
+        <input type="text" class="small-search-text" name="summoner" placeholder="Enter another Summoner's name."/>
+        <input type="button" id="small-search-button" onClick="getSummoner()"/>
+      </form>
+    </div>
+    <br>
+    <div class='all-stats'>
+      {% if chart %}
+        <div class='lifetime-stats-with-chart'>
+          <table class='bordered-table'>
+      {% else %}
+        <div class='lifetime-stats-without-chart'>
+          <table class='bordered-table' style="margin: 0px auto;">
+      {% endif %}
+            <tr>
+              <th colspan="2">Lifetime Statistics (per Game):</th>
+            </tr>
+            <tr>
+              <td>Win Rate ({{ summoner.matches_played }} games played)</td>
+              <td>{{ summoner.get_win_rate }}</td>
+            </tr>
+            <tr>
+              <td>Creep Score (CS)</td>
+              <td>{{ summoner.cs|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Kills</td>
+              <td>{{ summoner.kills|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Deaths</td>
+              <td>{{ summoner.deaths|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Assists</td>
+              <td>{{ summoner.assists|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Kill+Assist:Death Ratio (KDA)</td>
+              <td>{{ summoner.kda|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Total Gold</td>
+              <td>{{ summoner.gold|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>CS per Minute</td>
+              <td>{{ summoner.cs_per_min|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Gold per Minute</td>
+              <td>{{ summoner.gold_per_min|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Wards Placed</td>
+              <td>{{ summoner.wards_placed|floatformat }}</td>
+            </tr>
+            <tr>
+              <td>Wards Killed</td>
+              <td>{{ summoner.wards_killed|floatformat }}</td>
+            </tr>
+          </table>
         </div>
-      </div>
-      <div class="options-area">
-        <nav class="main-menu">
-          <ul>
-            <li>
-              <a href="{% url 'home' %}">
-                <i class="fa fa-home fa-2x"></i>
-                <span class="nav-text">
-                  Home
-                </span>
-              </a>
-            </li>
-            <li>
-              <a href="{% url 'about' %}">
-                <i class="fa fa-about fa-2x"></i>
-                <span class="nav-text">
-                  About
-                </span>
-              </a>
-            </li>
-            <li>
-              <a href="{% url 'championselect' %}">
-                <i class="fa fa-championselect fa-2x"></i>
-                <span class="nav-text">
-                  Champion Select Recommendations
-                </span>
-              </a>
-            </li>
-            <li>
-              <i class="fa fa-options fa-2x"></i>
-              <span class="nav-text">
-                Graphing Options
-              </span>
-            </li>
-            <li>
-              <form id="options" method="get">
-                <legend class='main'>Data Options:</legend>
-                <fieldset class='stats'>
-                  <legend class='sub'>Time Intervals*</legend>
-                  <input id="ti1" type="radio" name="interval" value="Year" checked>
-                  <label for="ti1">1 Year (365.25 Days)</label><br>
-                  <input id="ti2" type="radio" name="interval" value="30 Day Period">
-                  <label for="ti2">30 Day Period</label><br>
-                  <input id="ti3" type="radio" name="interval" value="Week">
-                  <label for="ti3">1 Week</label><br>
-                  <input id="ti4" type="radio" name="interval" value="Day">
-                  <label for="ti4">1 Day</label><br>
-                </fieldset>
-                <fieldset class='stats'>
-                  <legend class='sub'>Role*</legend>
-                  <input id="r1" type="radio" name="role" value="All" checked>
-                  <label for="r1">All</label><br>
-                  <input id="r2" type="radio" name="role" value="Top">
-                  <label for="r2">Top</label><br>
-                  <input id="r3" type="radio" name="role" value="Jungle">
-                  <label for="r3">Jungle</label><br>
-                  <input id="r4" type="radio" name="role" value="Mid">
-                  <label for="r4">Mid</label><br>
-                  <input id="r5" type="radio" name="role" value="AD Carry">
-                  <label for="r5">AD Carry</label><br>
-                  <input id="r6" type="radio" name="role" value="Support">
-                  <label for="r6">Support</label><br>
-                </fieldset>
-                <legend class='main'>Graph Options:</legend>
-                <fieldset class='stats'>
-                  <legend class='sub'>Graph Size*</legend>
-                  <input id="gs1" type="radio" name="chartsize" value="small" checked>
-                  <label for="gs1">Small</label><br>
-                  <input id="gs2" type="radio" name="chartsize" value="large">
-                  <label for="gs2">Large</label><br>
-                </fieldset>
-                <br><br><br><br><br><br>
-                <input type="submit" id="options-button" value="Graph!" onClick="">
-                <p class='form-caveat'>*Required</p>
-              </form>
-            </li>
-          </ul>
-        </nav>
+        {% if chart %}
+          {% if large %}
+            <div class="large-charts">
+              <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-1" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-2" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-3" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-4" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-5" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-6" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-7" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-8" style="width: 800px; height: 500px;"></div>
+              <div id="cs-container-9" style="width: 800px; height: 500px;"></div>
+            </div>
+          {% else %}
+            <div class="interactive left">
+              <div id="cs-container-0" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-2" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-4" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-6" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-8" style="width: 400px; height: 300px;"></div>
+            </div>
+            <div class="interactive right">
+              <div id="cs-container-1" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-3" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-5" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-7" style="width: 400px; height: 300px;"></div>
+              <div id="cs-container-9" style="width: 400px; height: 300px;"></div>
+            </div>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
-  {% else %}
-    <p>Not a valid summoner.</p>
-  {% endif %}
+    <div class="options-area">
+      <nav class="main-menu">
+        <ul>
+          <li>
+            <a href="{% url 'home' %}">
+              <i class="fa fa-home fa-2x"></i>
+              <span class="nav-text">
+                Home
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'about' %}">
+              <i class="fa fa-about fa-2x"></i>
+              <span class="nav-text">
+                About
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'championselect' %}">
+              <i class="fa fa-championselect fa-2x"></i>
+              <span class="nav-text">
+                Champion Select Recommendations
+              </span>
+            </a>
+          </li>
+          <li>
+            <i class="fa fa-options fa-2x"></i>
+            <span class="nav-text">
+              Graphing Options
+            </span>
+          </li>
+          <li>
+            <form id="options" method="get">
+              <legend class='main'>Data Options:</legend>
+              <fieldset class='stats'>
+                <legend class='sub'>Time Intervals*</legend>
+                <input id="ti1" type="radio" name="interval" value="Year" checked>
+                <label for="ti1">1 Year (365.25 Days)</label><br>
+                <input id="ti2" type="radio" name="interval" value="30 Day Period">
+                <label for="ti2">30 Day Period</label><br>
+                <input id="ti3" type="radio" name="interval" value="Week">
+                <label for="ti3">1 Week</label><br>
+                <input id="ti4" type="radio" name="interval" value="Day">
+                <label for="ti4">1 Day</label><br>
+              </fieldset>
+              <fieldset class='stats'>
+                <legend class='sub'>Role*</legend>
+                <input id="r1" type="radio" name="role" value="All" checked>
+                <label for="r1">All</label><br>
+                <input id="r2" type="radio" name="role" value="Top">
+                <label for="r2">Top</label><br>
+                <input id="r3" type="radio" name="role" value="Jungle">
+                <label for="r3">Jungle</label><br>
+                <input id="r4" type="radio" name="role" value="Mid">
+                <label for="r4">Mid</label><br>
+                <input id="r5" type="radio" name="role" value="AD Carry">
+                <label for="r5">AD Carry</label><br>
+                <input id="r6" type="radio" name="role" value="Support">
+                <label for="r6">Support</label><br>
+              </fieldset>
+              <legend class='main'>Graph Options:</legend>
+              <fieldset class='stats'>
+                <legend class='sub'>Graph Size*</legend>
+                <input id="gs1" type="radio" name="chartsize" value="small" checked>
+                <label for="gs1">Small</label><br>
+                <input id="gs2" type="radio" name="chartsize" value="large">
+                <label for="gs2">Large</label><br>
+              </fieldset>
+              <br><br><br><br><br><br>
+              <input type="submit" id="options-button" value="Graph!" onClick="">
+              <p class='form-caveat'>*Required</p>
+            </form>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
   <br>
   <br>
   <script>

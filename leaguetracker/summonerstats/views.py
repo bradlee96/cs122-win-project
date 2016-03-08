@@ -44,7 +44,7 @@ def championselect(request):
                 summoner = summoner_list[0]
                 recommended_champion = get_recommendation(summoner.summoner_id, [x for x in ally_champions.values()], [x for x in enemy_champions.values()], context['role'])
                 if recommended_champion != '':
-                    context['recommended_champion'] = recommended_champion.upper()
+                    context['recommended_champion'] = recommended_champion.capitalize()
                 else:
                     messages.error(request, 'An invalid champion name was entered.')
             else:
@@ -54,6 +54,7 @@ def championselect(request):
 def summonernotfound(request, summoner_name):
     if request.method == 'GET' and 'getsummoner' in request.GET:
         get_summoner(summoner_name)
+        return HttpResponseRedirect('/summoner/' + summoner_name)
     context = {}
     context['summoner_name'] = summoner_name
     return render(request, 'summonerstats/summonernotfound.html', context)

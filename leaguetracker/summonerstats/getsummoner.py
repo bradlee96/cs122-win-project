@@ -72,7 +72,7 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 			to_append['role'] = match['role']
 			match_list.append(to_append)
 			key_counter += 1
-
+	print(len(match_list))
 	return match_list
 
 

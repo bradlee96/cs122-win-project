@@ -11,8 +11,6 @@
     <br>
     <p>Unfortunately, <u>{{ summoner_name }}</u> is not currently in our database.</p>
     <p>Would you like to retrieve the data for this summoner?</p>
-    <form>
-      <input type="button" value="Get {{ summoner_name }}'s data" onClick="retrieveSummoner()">
-    </form>
+    <input type="button" id="getSummoner" value="Get {{ summoner_name }}'s data" onClick="retrieveSummoner()">
   </div>
 {% endblock %}
