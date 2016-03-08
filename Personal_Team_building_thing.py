@@ -11,17 +11,29 @@ Maybe we can just use a 'regression-like' sort of thing, where we use a greedy f
 '''
 Need to add some sort of experience factor, maybe a linear/logistic function
 up to, say, like 50 games. 
+M 5:30-7:30pm Horace RY 162
+Tu 10-12pm Qinqin RY 255
+
+
+Notes from Pan OH :
+
+Basically what we did. Maybe split functions for champion experience and affinity and then add an alpha, (1-alpha) sort of thing
+This is sort of what we did, we calculated purely on affinity and then applied a weight to it as a function of experience.
+
 '''
 import time
+import urllib.request
 import sqlite3
 import math
+import json
 
+key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 DATABASE_FILENAME = 'Fiendish_Codex.db'
 
-def get_dict(filename, summoner_name):
+def get_dict(filename, summoner_id):
 	conn = sqlite3.connect('Fiendish_Codex.db')
 	cursor = conn.cursor()
-	match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction JOIN Summoners WHERE summoner_name = '{}'".format(summoner_name)).fetchall()
+	match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction JOIN Summoners WHERE Summoners.summoner_id = {}".format(summoner_id)).fetchall()
 
 	cleaned_match_list = []
 	for match in match_list:
@@ -37,6 +49,7 @@ def get_dict(filename, summoner_name):
 
 def calculate_win_rate_per_champion_wrt_others(matchlist):
 	'''
+	Note, doesn't actually calculate the winrate, only returns the count, but y'know close enough
 	Basically just want to add a bunch of shit so I can get some probs later
 	[champ][allies/enemies][ally/enemy][[0,0]]
 	Think about specific comopositions, the global weighting does not take that into account. 
@@ -96,6 +109,8 @@ def suggest(data, champ_dict, allies, enemies):
 	then we add them all up
 	Also take into account how recent the champ was played 
 	More ideas: add some factor for confidence(# of games played)
+
+	rename all these normalizing things
 	'''
 	dic = {}
 	#This thing aggregates the allies/enemies
@@ -115,39 +130,60 @@ def suggest(data, champ_dict, allies, enemies):
 		normalizer = None
 		for guy in allies + enemies:
 			try:
-				fitness += normalizing_for_champ_experience *dic[champ][guy]
+				fitness += normalizing_for_champ_experience * dic[champ][guy]
 				if normalizer == None:
 					normalizer = 1
 				else:
 					normalizer += 1
 			except KeyError:
 				pass
-		print(champ, fitness)
+
 		if normalizer == None:
 			normalizer = 1
-		fitness = fitness / normalizer
+		fitness = fitness / normalizer 
 		print(champ, fitness)
 		if fitness > final_result[1]:
 			final_result = [champ, fitness]
 
-	return final_result
+	return final_result[0]
+
 
 def normalize(games_with_champ):
-	'''
-	'''
 	return .85 / (1 + math.e ** ( -5 * (.05 * games_with_champ - .25))) + .15
 
-def runit(summoner_name):
+
+def runit(summoner_name, allies, enemies, role):
+	'''
+	NEed to add default case
+	Need to add SQL stuff
+	'''
+	summoner_name = summoner_name.lower()
+	try:
+		summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format((summoner_name.replace(' ','')), key))
+		summoner_info_not_byte = summoner_info.readall().decode('utf-8')
+		summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
+	except urllib.error.HTTPError: #Probably no summoner name exists
+		print('Summoner name not found.')
+		return
 	
-	match_list = get_dict(DATABASE_FILENAME, summoner_name)
-	learned = calculate_win_rate_per_champion_wrt_others(match_list)	
+	match_list = get_dict(DATABASE_FILENAME, summoner_id, role)
+	learned = calculate_win_rate_per_champion_wrt_others(match_list)
 	champ_freq = get_num_games_per_champ(match_list)
 
-	print(learned)
-	print(suggest(learned,champ_freq,['janna'],['kassadin']))
-	print(time.clock())
-	print(suggest(learned,champ_freq,['kassadin'],['janna']))
-	print(time.clock())
-	print(suggest(learned,champ_freq,['shyvana'],[]))
+	# print(learned)
+	# print(suggest(learned,champ_freq,[],[]))
+	# print(time.clock())
+	# print(suggest(learned,champ_freq,['kassadin'],['janna']))
+	# print(time.clock())
+	# print(suggest(learned,champ_freq,['shyvana'],[]))
 
 runit('ghibli studios')
+
+'''
+Freq of hero usage, correlation of pairs allies and enemies
+optimize on experience, high score with heroes with and against
+dont forget to give John parents' numbers
+for the website, would be super nice to have on the draft input like, pictures of the champions that were picked.
+Found champion squares on wikia
+
+'''
