@@ -18,7 +18,10 @@ def get_champion_id_table(key):
 	champ_info = json.loads(champ_api_not_byte)['data']
 	cleaned_table = {}
 	for champion in champ_info.keys():
+		# print(champion)
 		cleaned_table[champ_info[champion]['id']] = champion.lower()
+		if champion.lower() == 'monkeyking':
+			cleaned_table[champ_info[champion]['id']] = 'wukong'
 	
 	return cleaned_table
 
@@ -27,56 +30,53 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	Returns a list of matches for a given summoner. The stats for the summoner are returned, and nothing else
 	This also updates, so no time is wasted
 	'''
-
 	conn = sqlite3.connect(DATABASE_FILENAME)
 	cursor = conn.cursor()
 	try:
-		latest_match = cursor.execute("SELECT time_stamp FROM {}_stats ORDER BY time_stamp DESC LIMIT 1".format(summoner_name)).fetchall()
+		latest_match = cursor.execute("SELECT time_stamp from Matches JOIN Junction ON Junction.match_id = Matches.match_id WHERE Junction.summoner_id = {} ORDER BY time_stamp DESC LIMIT 1".format(summoner_id)).fetchall()
 		if latest_match != []:
-			latest_match = latest_match[0] * 1000
+			latest_match = int(latest_match[0][0] * 1000 + 1)
 		else:
 			latest_match = 0
 	except Exception:
 		latest_match = 0
 
+	print(latest_match)
 	conn.close()
 
-	matches_info = urllib.request.urlopen("https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=TEAM_BUILDER_DRAFT_RANKED_5x5,RANKED_SOLO_5x5&beginTime={}&api_key={}".format(summoner_id, latest_match, key))
-	matches_info_not_byte = matches_info.readall().decode('utf-8')
-	matches = json.loads(matches_info_not_byte)
-
-	#Checks if there are any new matches
 	try:
-		if matches['status']['status_code'] == 404: #Hasn't played any new games
-			return
-	except KeyError:
-		pass
+		matches_info = urllib.request.urlopen("https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/{}?rankedQueues=TEAM_BUILDER_DRAFT_RANKED_5x5,RANKED_SOLO_5x5&beginTime={}&api_key={}".format(summoner_id, latest_match, key))
+		matches_info_not_byte = matches_info.readall().decode('utf-8')
+		matches = json.loads(matches_info_not_byte)
+	except urllib.error.HTTPError:
+		return 'No new matches to update.'
 
 	try:
-		if matches["totalGames"] == 0: #Hasn't played any games, at all
-			return
+		if matches["totalGames"] == 0 and latest_match == 0: #Hasn't played any games, at all
+			return 'Summoner has no ranked games'
+		elif matches["totalGames"] == 0 and latest_match != 0:
+			return 'No new matches to update.'
 	except KeyError:
 		pass
 
 	match_list = []
-	team_list = []
 	key_counter = 1
 	champion_id_table = get_champion_id_table(key)
 
 	for match in matches['matches']:
-		to_append = get_match_info_for_summoner(match, key_list[key_counter % len(key_list)], summoner_name, champion_id_table)
-		to_append[0]['lane'] = match['lane']
-		to_append[0]['role'] = match['role']
-		to_append[1]['lane'] = match['lane']
-		to_append[1]['role'] = match['role']
-		match_list.append(to_append[0])
-		team_list.append(to_append[1])
-		key_counter += 1
+		if match['region'] != 'NA':
+			continue
+		else:
+			to_append = get_match_info_for_summoner(match, key_list[key_counter % len(key_list)], summoner_id, champion_id_table)
+			to_append['lane'] = match['lane']
+			to_append['role'] = match['role']
+			match_list.append(to_append)
+			key_counter += 1
 
-	return match_list, team_list
+	return match_list
 
 
-def get_match_info_for_summoner(match, key, summoner_name, champion_id_table):
+def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 	'''
 	Parses out the summoner-specific information. Returns a dictionary
 	Have to do this super awkward thing where for some reason the Json is not organized by name or id but rather
@@ -85,13 +85,13 @@ def get_match_info_for_summoner(match, key, summoner_name, champion_id_table):
 	Champion ID is in here
 	I'm like 99% sure that the participantId 1-5 are on a team
 	'''
-	# print(0, time.clock())
 	match_id = match['matchId']
 
 	#Catches some weird HTTP 500 Error that comes up every like, 1000 games for some reason. Counter is probably not needed
 	counter = 0
 	while True:
 		try:
+			#Unfortunately, this is the thing that takes the most time. Don't think I can optimize it
 			match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
 		except urllib.error.HTTPError:
 			counter += 1
@@ -99,62 +99,69 @@ def get_match_info_for_summoner(match, key, summoner_name, champion_id_table):
 				break
 			continue
 		break
-	# print(1, time.clock())
-	match_info_not_byte = match_info.readall().decode('utf-8')
-	# print(2, time.clock())
-	match_json = json.loads(match_info_not_byte)
-	# print(3, time.clock())
 
-	data = {'match_id': 0,'me': 0, 'allies': [], 'enemies': []}
+	match_info_not_byte = match_info.readall().decode('utf-8')
+	match_json = json.loads(match_info_not_byte)
+
+	data = {'allies': [], 'enemies': []}
 	for player in range(10):
-		if match_json['participantIdentities'][player]['player']['summonerName'].lower() == summoner_name:
-			data['me'] = champion_id_table[match_json['participants'][player]['championId']]
+		if match_json['participantIdentities'][player]['player']['summonerId'] == summoner_id:
 			player_participant_id = match_json['participantIdentities'][player]['participantId']
 			match_info_for_summoner = match_json['participants'][player]
 		elif player <= 4:
 			data['allies'].append(champion_id_table[match_json['participants'][player]['championId']])
 		else:
 			data['enemies'].append(champion_id_table[match_json['participants'][player]['championId']])
-
-	if player_participant_id > 5:
-		data['allies'], data['enemies'] = data['enemies'], data['allies']
+	try:
+		if player_participant_id > 5:
+			data['allies'], data['enemies'] = data['enemies'], data['allies']
+	except UnboundLocalError: # Take this out later 
+		print(match['matchId'])
+		print(match_json['participantIdentities'][player]['participantId'])
 
 	match_info_for_summoner['championId'] = champion_id_table[match_info_for_summoner['championId']]
 	match_info_for_summoner['match_id'] = match['matchId']
 	match_info_for_summoner['match_duration'] = match_json['matchDuration']
 	match_info_for_summoner['season'] = match['season']
 	match_info_for_summoner['timestamp'] = match['timestamp']
-	data['match_id'] = match['matchId']
-	data['winner'] = match_info_for_summoner['stats']['winner']
+	match_info_for_summoner['allies'] = data['allies']
+	match_info_for_summoner['enemies'] = data['enemies']
 
-	return match_info_for_summoner, data
+	return match_info_for_summoner
 
 def export_matches(file_name, matchlist):
 	with open(file_name, 'w') as outfile:
 	    json.dump(matchlist, outfile)
 
-def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
+def add_to_SQL(s_id, s_name, match_list):
+
 	'''
 	Creates a table for the data necessary to make graphs, and another table for the team info for the team builder
 	'''
-	SQL_summoner_columns = ['summoner_id', 'summoner_name', 'match_id', 
-'season', 'time_stamp', 'match_duration', 'champion', 'lane', 
-'role', 'winner', 'cs', 'kills', 'deaths','assists','gold',
-'wards_placed', 'wards_killed']
+	SQL_summoner_table = ['summoner_id', 'summoner_name', 'winrate', 'cs', 'kills', 'deaths', 'assists', 'kda', 'gold', 'cs_per_min', 'gold_per_min', 'wards_placed', 'wards_killed', 'matches_played']
+	SQL_match_table = ['match_id', 'season', 'time_stamp', 'match_duration']
+	SQL_junction_table = ['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold', 'wards_placed', 'wards_killed', 'allies', 'enemies']
 
-	SQL_team_columns = ['summoner_id', 'summoner_name', 'match_id', 
-'winner', 'me', 'lane', 'role', 'allies', 'enemies']
+	summoner_values = []
+	match_values = []
+	junction_values = []
 
-	values = []
-	team_values = []
-	conn = sqlite3.connect(file_name)
+	try:
+		primary_key = cursor.execute("SELECT primary_key from Junction ORDER BY primary_key DESC LIMIT 1").fetchall()[0][0]
+	except Exception:
+		primary_key = 0
+
 	for match in match_list:
-		values.append((s_id, 
-			s_name, 
+		match_values.append((
 			match['match_id'], 
 			match['season'], 
 			match['timestamp']/1000, 
-			match['match_duration'],
+			match['match_duration']))
+
+		junction_values.append((
+			primary_key,
+			s_id,
+			match['match_id'],
 			match['championId'],
 			match['lane'],
 			match['role'], 
@@ -165,55 +172,115 @@ def add_to_SQL(s_id, s_name, match_list, team_list, file_name):
 			match['stats']['assists'],
 			match['stats']['goldEarned'],
 			match['stats']['wardsPlaced'],
-			match['stats']['wardsKilled']))
+			match['stats']['wardsKilled'],
+			'|'.join(match['allies']),
+			'|'.join(match['enemies'])))
 
-	for team in team_list:
-		team_values.append((s_id, 
-			s_name,
-			team['match_id'],
-			team['winner'],
-			team['me'],
-			team['lane'],
-			team['role'],
-			'|'.join(team['allies']),
-			'|'.join(team['enemies'])))
+		primary_key += 1
+
+	conn = sqlite3.connect(DATABASE_FILENAME)
+	cursor = conn.cursor()
 
 	try:
-		conn.executemany('INSERT INTO {}_stats VALUES ({})'.format(s_name, ','.join('?' * len(values[0]))), (values))
-		conn.executemany('INSERT INTO {}_team VALUES ({})'.format(s_name, ','.join('?' * len(team_values[0]))), (team_values))
-	except Exception:
-		conn.execute('''CREATE TABLE {}_stats ({})'''.format(s_name, ','.join(SQL_summoner_columns)))
-		conn.executemany('INSERT INTO {}_stats VALUES ({})'.format(s_name, ','.join('?' * len(values[0]))), (values))	
-		conn.execute('''CREATE TABLE {}_team ({})'''.format(s_name, ','.join(SQL_team_columns)))
-		conn.executemany('INSERT INTO {}_team VALUES ({})'.format(s_name, ','.join('?' * len(team_values[0]))), (team_values))	
+		conn.executemany('INSERT INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
+		conn.executemany('INSERT INTO Junction VALUES ({})'.format(','.join('?' * len(junction_values[0]))), (junction_values))
+	except Exception: #Basically if the db does not even exist yet
+		conn.execute('''CREATE TABLE Matches ({})'''.format(','.join(SQL_match_table)))
+		conn.executemany('INSERT INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
+		conn.execute('''CREATE TABLE Junction ({})'''.format(','.join(SQL_junction_table)))
+		conn.executemany('INSERT INTO Junction VALUES ({})'.format(','.join('?' * len(junction_values[0]))), (junction_values))
+
+	conn.commit()
+
+	summoner_values += [s_id, s_name]
+	summoner_values += update_global_values(s_id, cursor)
+	summoner_values = [tuple(summoner_values)]
+	
+	try: #If this succeeds we don't do anything
+		summoner_unique = cursor.execute("SELECT summoner_name from Summoners WHERE summoner_id = {}".format(s_id)).fetchall()[0][0]
+	except sqlite3.OperationalError: #If db doesn't yet exist
+		conn.execute('''CREATE TABLE Summoners ({})'''.format(','.join(SQL_summoner_table)))
+		conn.executemany('INSERT INTO Summoners VALUES ({})'.format(','.join('?' * len(summoner_values[0]))), (summoner_values))
+	except IndexError: #If no summoner is found
+		conn.executemany('INSERT INTO Summoners VALUES ({})'.format(','.join('?' * len(summoner_values[0]))), (summoner_values))
+	else: #if try doesn't fail and we want to update, this part also incidentally updates the name in case of name change
+		set_list = []
+		for i in SQL_summoner_table:
+			set_list.append('{} = ?'.format(i))
+		conn.execute('Update Summoners SET {} WHERE summoner_id = {}'.format(','.join(set_list), s_id), (summoner_values[0]))
 
 	conn.commit()
 	conn.close()
+
+def update_global_values(summoner_id, cursor):
+	'''
+	This function updates the global values for a summoner
+
+	winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, wards_placed, wards_killed would be good
+
+	['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold', 'wards_placed', 'wards_killed', 'allies', 'enemies']
+	'''
+	select_statement = 'match_duration, winner, cs, kills, deaths, assists, gold, wards_placed, wards_killed'
+	separate_info = cursor.execute("SELECT {} from Matches JOIN Junction ON Matches.match_id = Junction.match_id WHERE summoner_id = {}".format(select_statement, summoner_id)).fetchall()
+
+	total_duration = 0
+	winrate = 0
+	cs = 0
+	kills = 0
+	deaths = 0
+	assists = 0
+	kda = 0
+	gold = 0
+	cs_per_min = 0
+	gold_per_min = 0
+	wards_placed = 0
+	wards_killed = 0
+
+	for match in separate_info:
+		total_duration += match[0] 
+		winrate += match[1]
+		cs += match[2] / len(separate_info)
+		kills += match[3] / len(separate_info)
+		deaths += match[4] / len(separate_info)
+		assists += match[5] / len(separate_info)
+		gold += match[6] / len(separate_info)
+		wards_placed += match[7] / len(separate_info)
+		wards_killed += match[8] / len(separate_info)
+
+	winrate = winrate/len(separate_info)
+	cs_per_min = cs * len(separate_info) / (total_duration / 60)
+	gold_per_min = gold * len(separate_info) / (total_duration / 60)
+	kda = (kills + assists) / max(1, deaths)
+
+	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, wards_placed, wards_killed, len(separate_info)]
 
 def runit(summoner_name, save_json = False, write_SQL = True):
 	print('Start:', time.clock())
 	
 	summoner_name = summoner_name.lower()
-	summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format(summoner_name.replace(' ',''), key))
-	summoner_info_not_byte = summoner_info.readall().decode('utf-8')
-	summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
+	try:
+		summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format((summoner_name.replace(' ','')), key))
+		summoner_info_not_byte = summoner_info.readall().decode('utf-8')
+		summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
+	except urllib.error.HTTPError: #Probably no summoner name exists
+		print('Summoner name not found.')
+		return
 
 	print('Pulling Matches')
-	data_tuple = get_matches(summoner_name, summoner_id, key)
+	matches = get_matches(summoner_name, summoner_id, key)
 
-	if data_tuple == None:
+	if type(matches) != list:
+		print(matches)
 		print('Finish:', time.clock())
 		return
 
 	if save_json == True:
 		print('Saving Jsons')
-		export_matches('{}_summoner.json'.format(summoner_name.replace(' ','_')),data_tuple[0])
-		export_matches('{}_team.json'.format(summoner_name.replace(' ','_')),data_tuple[0])
+		export_matches('{}.json'.format(summoner_name, matches))
 
 	if write_SQL == True:
-		print('Creating SQL databases')
-		add_to_SQL(summoner_id, summoner_name.replace(' ','_'), data_tuple[0], data_tuple[1], DATABASE_FILENAME)
+		print('Creating SQL database')
+		add_to_SQL(summoner_id, summoner_name, matches)
 
 	print('Finish:', time.clock())
 
-runit('Lee Rush Sin')
