@@ -1,32 +1,160 @@
-{% extends 'summonerstats/base.html' %}
+{% extends 'summonerstats/base_with_sidebar.html' %}
 {% block content %}
-  <div class="champion-select">
-    <form id="champion-select-form">
-      <legend class='champion-select-header'>Champion Select Recommender:</legend>
-      <table>
-        <tr>
-          <td><input type="text" class="small-search-text" name="ally-champion-1" placeholder="Ally Champion 1"/></td>
-          <td><input type="text" class="small-search-text" name="enemy-champion-1" placeholder="Enemy Champion 1"/></td>
-        </tr>
-        <tr>
-          <td><input type="text" class="small-search-text" name="ally-champion-2" placeholder="Ally Champion 2"/></td>
-          <td><input type="text" class="small-search-text" name="enemy-champion-2" placeholder="Enemy Champion 2"/></td>
-        </tr>
-        <tr>
-          <td><input type="text" class="small-search-text" name="ally-champion-3" placeholder="Ally Champion 3"/></td>
-          <td><input type="text" class="small-search-text" name="enemy-champion-3" placeholder="Enemy Champion 3"/></td>
-        </tr>
-        <tr>
-          <td><input type="text" class="small-search-text" name="ally-champion-4" placeholder="Ally Champion 4"/></td>
-          <td><input type="text" class="small-search-text" name="enemy-champion-4" placeholder="Enemy Champion 4"/></td>
-        </tr>
-        <tr>
-          <td><input type="text" READONLY id="recommendation" class="dark-small-search-text" name="player-champion" placeholder="Your Recommended Champion"/></td>
-          <td><input type="text" class="small-search-text" name="enemy-champion-5" placeholder="Enemy Champion 5"/></td>
-        </tr>
-      </table>
-      <br>
-      <input type="submit" id="champion-recommendation-button" value="Get Champion Recommendation" onClick="recommendChampion()"/>
-    </form>
+  <div class="champion-select-page">
+    <div class="champion-select">
+      {% if messages %}
+          {% for message in messages %}
+              <p class='error'>{{ message }}</p>
+          {% endfor %}
+      {% endif %}
+      <form id="champion-select-form">
+        <legend class='champion-select-header'>Champion Select Recommender:</legend>
+        <fieldset class='champion-select'>
+          <table>
+            <tr>
+              {% if champion_select_summoner %}
+                <th colspan="2"><input type="text" class="small-search-text" name="champion_select_summoner" value="{{ champion_select_summoner }}"/></td></th>
+              {% else %}
+                <th colspan="2"><input type="text" class="small-search-text" name="champion_select_summoner" placeholder="Summoner Name"/></td></th>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if ally_champion_1 %}
+                <td><input type="text" class="small-search-text" name="ally_champion_1" value="{{ ally_champion_1 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="ally_champion_1" placeholder="Ally Champion 1"/></td>
+              {% endif %}
+              {% if enemy_champion_1 %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_1" value="{{ enemy_champion_1 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_1" placeholder="Enemy Champion 1"/></td>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if ally_champion_2 %}
+                <td><input type="text" class="small-search-text" name="ally_champion_2" value="{{ ally_champion_2 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="ally_champion_2" placeholder="Ally Champion 2"/></td>
+              {% endif %}
+              {% if enemy_champion_2 %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_2" value="{{ enemy_champion_2 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_2" placeholder="Enemy Champion 2"/></td>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if ally_champion_3 %}
+                <td><input type="text" class="small-search-text" name="ally_champion_3" value="{{ ally_champion_3 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="ally_champion_3" placeholder="Ally Champion 3"/></td>
+              {% endif %}
+              {% if enemy_champion_3 %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_3" value="{{ enemy_champion_3 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_3" placeholder="Enemy Champion 3"/></td>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if ally_champion_4 %}
+                <td><input type="text" class="small-search-text" name="ally_champion_4" value="{{ ally_champion_4 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="ally_champion_4" placeholder="Ally Champion 4"/></td>
+              {% endif %}
+              {% if enemy_champion_4 %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_4" value="{{ enemy_champion_4 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_4" placeholder="Enemy Champion 4"/></td>
+              {% endif %}
+            </tr>
+            <tr>
+              {% if recommended_champion %}
+                <td><input type="text" DISABLED id="recommendation" class="dark-small-search-text" name="player-champion" value="{{ recommended_champion }}"/></td>
+              {% else %}
+                <td><input type="text" DISABLED id="recommendation" class="dark-small-search-text" name="player-champion" placeholder="Your Recommended Champion"/></td>
+              {% endif %}
+              {% if enemy_champion_5 %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_5" value="{{ enemy_champion_5 }}"/></td>
+              {% else %}
+                <td><input type="text" class="small-search-text" name="enemy_champion_5" placeholder="Enemy Champion 5"/></td>
+              {% endif %}
+            </tr>
+          </table>
+        </fieldset>
+        <fieldset class='champion-select'>
+          <legend class='sub'>Role*</legend>
+          {% if role %}
+            {% if role == 'TOP' %}
+              <input id="r1" type="radio" name="role" value="TOP" checked>
+              <label for="r1">Top</label><br>
+              <input id="r2" type="radio" name="role" value="JUNGLE">
+              <label for="r2">Jungle</label><br>
+              <input id="r3" type="radio" name="role" value="MID">
+              <label for="r3">Mid</label><br>
+              <input id="r4" type="radio" name="role" value="DUO_CARRY">
+              <label for="r4">AD Carry</label><br>
+              <input id="r5" type="radio" name="role" value="DUO_SUPPORT">
+              <label for="r5">Support</label><br>
+            {% elif role == 'JUNGLE' %}
+              <input id="r1" type="radio" name="role" value="TOP">
+              <label for="r1">Top</label><br>
+              <input id="r2" type="radio" name="role" value="JUNGLE" checked>
+              <label for="r2">Jungle</label><br>
+              <input id="r3" type="radio" name="role" value="MID">
+              <label for="r3">Mid</label><br>
+              <input id="r4" type="radio" name="role" value="DUO_CARRY">
+              <label for="r4">AD Carry</label><br>
+              <input id="r5" type="radio" name="role" value="DUO_SUPPORT">
+              <label for="r5">Support</label><br>
+            {% elif role == 'MID' %}
+              <input id="r1" type="radio" name="role" value="TOP">
+              <label for="r1">Top</label><br>
+              <input id="r2" type="radio" name="role" value="JUNGLE">
+              <label for="r2">Jungle</label><br>
+              <input id="r3" type="radio" name="role" value="MID" checked>
+              <label for="r3">Mid</label><br>
+              <input id="r4" type="radio" name="role" value="DUO_CARRY">
+              <label for="r4">AD Carry</label><br>
+              <input id="r5" type="radio" name="role" value="DUO_SUPPORT">
+              <label for="r5">Support</label><br>
+            {% elif role == 'DUO_CARRY' %}
+              <input id="r1" type="radio" name="role" value="TOP">
+              <label for="r1">Top</label><br>
+              <input id="r2" type="radio" name="role" value="JUNGLE">
+              <label for="r2">Jungle</label><br>
+              <input id="r3" type="radio" name="role" value="MID">
+              <label for="r3">Mid</label><br>
+              <input id="r4" type="radio" name="role" value="DUO_CARRY" checked>
+              <label for="r4">AD Carry</label><br>
+              <input id="r5" type="radio" name="role" value="DUO_SUPPORT">
+              <label for="r5">Support</label><br>
+            {% else %}
+              <input id="r1" type="radio" name="role" value="TOP">
+              <label for="r1">Top</label><br>
+              <input id="r2" type="radio" name="role" value="JUNGLE">
+              <label for="r2">Jungle</label><br>
+              <input id="r3" type="radio" name="role" value="MID">
+              <label for="r3">Mid</label><br>
+              <input id="r4" type="radio" name="role" value="DUO_CARRY">
+              <label for="r4">AD Carry</label><br>
+              <input id="r5" type="radio" name="role" value="DUO_SUPPORT" checked>
+              <label for="r5">Support</label><br>
+            {% endif %}
+          {% else %}
+            <input id="r1" type="radio" name="role" value="TOP" checked>
+            <label for="r1">Top</label><br>
+            <input id="r2" type="radio" name="role" value="JUNGLE">
+            <label for="r2">Jungle</label><br>
+            <input id="r3" type="radio" name="role" value="MID">
+            <label for="r3">Mid</label><br>
+            <input id="r4" type="radio" name="role" value="DUO_CARRY">
+            <label for="r4">AD Carry</label><br>
+            <input id="r5" type="radio" name="role" value="DUO_SUPPORT">
+            <label for="r5">Support</label><br>
+          {% endif %}
+        </fieldset>
+        <br>
+        <input type="submit" id="champion-recommendation-button" value="Get Champion Recommendation"/>
+      </form>
+    </div>
   </div>
 {% endblock %}

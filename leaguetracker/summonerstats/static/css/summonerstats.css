@@ -100,8 +100,10 @@ label {
   font-size: 13px;
 }
 table, th, td {
-  border: 2px solid black;
   padding: 15px;
+}
+table.bordered-table, table.bordered-table th, table.bordered-table td {
+  border: 2px solid black;
 }
 th {
   font-size: 16px;
@@ -115,7 +117,7 @@ legend.sub {
   font-size: 14px;
   color: #FFFFFF;
 }
-fieldset {
+fieldset.stats {
   float: left;
   width: 50%;
 }
@@ -143,10 +145,14 @@ fieldset {
 #champion-recommendation-button {
   color: #666666;
   background-color: #ECECEC;
-  border-radius:3px;
-	-moz-border-radius:3px;
-	-webkit-border-radius:3px;
+  border-radius:5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
   border: 0px;
+}
+.error {
+  color: #FFD700;
+  font-size: 20px;
 }
 .description {
   padding-top: 50px;
@@ -173,6 +179,7 @@ fieldset {
   float: left;
 }
 .champion-select {
+  width: 100%;
   text-align: center;
 }
 .champion-select-header {
@@ -185,9 +192,9 @@ fieldset {
   text-align: center;
   color: #666666;
   background-color: #ECECEC;
-  border-radius:3px;
-	-moz-border-radius:3px;
-	-webkit-border-radius:3px;
+  border-radius:5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
   border: 0px;
 }
 #champion-select-form {

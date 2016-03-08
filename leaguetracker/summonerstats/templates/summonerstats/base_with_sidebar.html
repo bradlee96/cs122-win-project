@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+  <head>
+    <title>LoL Performance Tracker</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="{% static 'css/summonerstats.css' %}">
+    <link href='https://fonts.googleapis.com/css?family=Titillium+Web' rel='stylesheet' type='text/css'>
+    <script src="{% static 'js/summonerstats.js' %}"></script>
+    {% if summoner %}
+      <script src="{% static 'js/jquery-1.12.1.min.js' %}"></script>
+      <script src="{% static 'js/highcharts.js' %}"></script>
+      <script src="{% static 'js/regression.js' %}"></script>
+    {% endif %}
+  </head>
+  <body>
+    <header class='page-header'>
+      <h1>
+        <a href="/">League of Legends<br>Performance Tracker</a>
+      </h1>
+    </header>
+    <div class='body'>
+      {% block content %}
+      {% endblock %}
+      <div class="options-area">
+        <nav class="main-menu">
+          <ul>
+            <li>
+              <a href="{% url 'home' %}">
+                <i class="fa fa-home fa-2x"></i>
+                <span class="nav-text">
+                  Home
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'about' %}">
+                <i class="fa fa-about fa-2x"></i>
+                <span class="nav-text">
+                  About
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'championselect' %}">
+                <i class="fa fa-championselect fa-2x"></i>
+                <span class="nav-text">
+                  Champion Select Recommendations
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+    <footer class='page-footer'>
+      <div class='description'>
+        <p>CMSC 12200 Project: Currently only works for the North America Server (NA).</p>
+      </div>
+    </footer>
+  </body>
+</html>

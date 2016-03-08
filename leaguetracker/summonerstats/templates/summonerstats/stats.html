@@ -14,93 +14,94 @@
       <div class='all-stats'>
         {% if chart %}
           <div class='lifetime-stats-with-chart'>
-          <table>
+            <table class='bordered-table'>
         {% else %}
           <div class='lifetime-stats-without-chart'>
-          <table style="margin: 0px auto;">
+            <table class='bordered-table' style="margin: 0px auto;">
         {% endif %}
-            <tr>
-              <th colspan="2">Lifetime Statistics (per Game):</th>
-            </tr>
-            <tr>
-              <td>Win Rate ({{ summoner.matches_played }} games played)</td>
-              <td>{{ summoner.get_win_rate }}</td>
-            </tr>
-            <tr>
-              <td>Creep Score (CS)</td>
-              <td>{{ summoner.cs|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Kills</td>
-              <td>{{ summoner.kills|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Deaths</td>
-              <td>{{ summoner.deaths|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Assists</td>
-              <td>{{ summoner.assists|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Kill+Assist:Death Ratio (KDA)</td>
-              <td>{{ summoner.kda|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Total Gold</td>
-              <td>{{ summoner.gold|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>CS per Minute</td>
-              <td>{{ summoner.cs_per_min|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Gold per Minute</td>
-              <td>{{ summoner.gold_per_min|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Wards Placed</td>
-              <td>{{ summoner.wards_placed|floatformat }}</td>
-            </tr>
-            <tr>
-              <td>Wards Killed</td>
-              <td>{{ summoner.wards_killed|floatformat }}</td>
-            </tr>
-          </table>
-        </div>
-        {% if chart %}
-          {% if large %}
-            <div class="large-charts">
-              <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-1" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-2" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-3" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-4" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-5" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-6" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-7" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-8" style="width: 800px; height: 500px;"></div>
-              <div id="cs-container-9" style="width: 800px; height: 500px;"></div>
-            </div>
-          {% else %}
-            <div class="interactive left">
+              <tr>
+                <th colspan="2">Lifetime Statistics (per Game):</th>
+              </tr>
+              <tr>
+                <td>Win Rate ({{ summoner.matches_played }} games played)</td>
+                <td>{{ summoner.get_win_rate }}</td>
+              </tr>
+              <tr>
+                <td>Creep Score (CS)</td>
+                <td>{{ summoner.cs|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Kills</td>
+                <td>{{ summoner.kills|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Deaths</td>
+                <td>{{ summoner.deaths|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Assists</td>
+                <td>{{ summoner.assists|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Kill+Assist:Death Ratio (KDA)</td>
+                <td>{{ summoner.kda|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Total Gold</td>
+                <td>{{ summoner.gold|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>CS per Minute</td>
+                <td>{{ summoner.cs_per_min|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Gold per Minute</td>
+                <td>{{ summoner.gold_per_min|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Wards Placed</td>
+                <td>{{ summoner.wards_placed|floatformat }}</td>
+              </tr>
+              <tr>
+                <td>Wards Killed</td>
+                <td>{{ summoner.wards_killed|floatformat }}</td>
+              </tr>
+            </table>
+          </div>
+          {% if chart %}
+            {% if large %}
+              <div class="large-charts">
+                <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-1" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-2" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-3" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-4" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-5" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-6" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-7" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-8" style="width: 800px; height: 500px;"></div>
+                <div id="cs-container-9" style="width: 800px; height: 500px;"></div>
+              </div>
+            {% else %}
+              <div class="interactive left">
                 <div id="cs-container-0" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-2" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-4" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-6" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-8" style="width: 400px; height: 300px;"></div>
-            </div>
-            <div class="interactive right">
+              </div>
+              <div class="interactive right">
                 <div id="cs-container-1" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-3" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-5" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-7" style="width: 400px; height: 300px;"></div>
                 <div id="cs-container-9" style="width: 400px; height: 300px;"></div>
-            </div>
-          {% endif %}
-        {% else %}
+              </div>
+            {% endif %}
+          {% else %}
 
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
       <div class="options-area">
         <nav class="main-menu">
@@ -138,7 +139,7 @@
             <li>
               <form id="options" method="get">
                 <legend class='main'>Data Options:</legend>
-                <fieldset>
+                <fieldset class='stats'>
                   <legend class='sub'>Time Intervals*</legend>
                   <input id="ti1" type="radio" name="interval" value="Year" checked>
                   <label for="ti1">1 Year (365.25 Days)</label><br>
@@ -149,7 +150,7 @@
                   <input id="ti4" type="radio" name="interval" value="Day">
                   <label for="ti4">1 Day</label><br>
                 </fieldset>
-                <fieldset>
+                <fieldset class='stats'>
                   <legend class='sub'>Role*</legend>
                   <input id="r1" type="radio" name="role" value="All" checked>
                   <label for="r1">All</label><br>
@@ -165,7 +166,7 @@
                   <label for="r6">Support</label><br>
                 </fieldset>
                 <legend class='main'>Graph Options:</legend>
-                <fieldset>
+                <fieldset class='stats'>
                   <legend class='sub'>Graph Size*</legend>
                   <input id="gs1" type="radio" name="chartsize" value="small" checked>
                   <label for="gs1">Small</label><br>

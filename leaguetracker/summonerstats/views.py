@@ -2,7 +2,9 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect
 from .models import Summoner, Match, Junction
 from datetime import date, datetime
-import time
+from django.contrib import messages
+from .teambuilder import runit
+import time, re
 
 OFFSET_EPOCH_WEEK_TO_SUNDAY = 345600
 EPOCH_TIME_COUNTERS = {'Year': 31557600, '30 Day Period': 2592000, 'Week': 604800, 'Day': 86400}
@@ -15,6 +17,38 @@ def home(request):
     template_name = 'summonerstats/home.html'
     summoner_list = Summoner.objects.all()
     return render(request, 'summonerstats/home.html', {'summoner_list': summoner_list})
+
+def about(request):
+    '''Remember to comment'''
+    return render(request, 'summonerstats/about.html', {})
+
+def championselect(request):
+    context = {}
+    if request.method == "GET":
+        ally_champions = {}
+        enemy_champions = {}
+        for player_identifier, champion in request.GET.items():
+            if champion != '':
+                if re.match('ally', player_identifier):
+                    ally_champions[player_identifier] = champion
+                elif re.match('enemy', player_identifier):
+                    enemy_champions[player_identifier] = champion
+        context.update(ally_champions)
+        context.update(enemy_champions)
+        if 'role' in request.GET:
+            context['role'] = request.GET['role']
+            context['champion_select_summoner'] = request.GET['champion_select_summoner']
+            summoner_list = Summoner.objects.filter(summoner_name=request.GET['champion_select_summoner'].lower())
+            if len(summoner_list) != 0:
+                summoner = summoner_list[0]
+                recommended_champion = runit(summoner.summoner_id, [x for x in ally_champions.values()], [x for x in enemy_champions.values()], context['role'])
+                if recommended_champion != '':
+                    context['recommended_champion'] = recommended_champion.upper()
+                else:
+                    messages.error(request, 'An invalid champion name was entered.')
+            else:
+                messages.error(request, 'Not a valid summoner, or not currently in our database.')
+    return render(request, 'summonerstats/championselect.html', context)
 
 def stats(request, summoner_name):
     '''Remember to comment'''
@@ -162,9 +196,6 @@ def stats(request, summoner_name):
                     context['time_start'] = get_UTC_time(time_start_category)
     return render(request, 'summonerstats/stats.html', context)
 
-def championselect(request):
-        return render(request, 'summonerstats/championselect.html', {})
-
 def get_UTC_time(epoch_time):
     return list(time.gmtime(epoch_time)[:3])
 
@@ -203,5 +234,4 @@ def get_num_time_stamps(time_interval, time_start, time_end):
         time_start = get_epoch_time_category(time_start, time_interval)
         time_end = get_epoch_time_category(time_end, time_interval)
         num_time_stamps = int(round( ((time_end - time_start) / EPOCH_TIME_COUNTERS[time_interval]) + 1 ))
-    print('Num Time Stamps:', num_time_stamps)
     return num_time_stamps

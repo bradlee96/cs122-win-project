@@ -6,7 +6,3 @@ function getSummoner() {
 function goToChampionSelect() {
     location.href = "/championselect";
 };
-
-function recommendChampion() {
-    document.getElementById("recommendation").value = "Annie";
-};
