@@ -34,11 +34,10 @@ def get_champion_id_table(key):
 			champion_list.append('wukong')
 		else:
 			champion_list.append(champion.lower())
-
 	return champion_list
 
 def get_dict(filename, summoner_id, role):
-	conn = sqlite3.connect('Fiendish_Codex.db')
+	conn = sqlite3.connect(filename)
 	cursor = conn.cursor()
 	if role == "DUO_CARRY" or role == "DUO_SUPPORT":
 		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction WHERE summoner_id = {} AND lane = '{}' AND role = '{}'".format(summoner_id, "BOTTOM", role)).fetchall()
@@ -176,7 +175,7 @@ def normalize_pairs(pair_count):
 	'''
 	return .85 / (1 + math.e ** ( -5 * (.05 * pair_count - .25))) + .15
 
-def runit(summoner_id, allies, enemies, role):
+def get_recommendation(summoner_id, allies, enemies, role):
 	'''
 	Need to add default case
 	Need to add SQL stuff

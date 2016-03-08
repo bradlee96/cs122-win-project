@@ -20,5 +20,6 @@ urlpatterns = [
      url(r'^$', views.home, name='home'),
      url(r'^about/$', views.about, name='about'),
      url(r'^championselect/$', views.championselect, name='championselect'),
+     url(r'^summonernotfound/(?P<summoner_name>[\w\ ]+)/$', views.summonernotfound, name='summonernotfound'),
      url(r'^summoner/(?P<summoner_name>[\w\ ]+)/$', views.stats, name='stats')
 ]

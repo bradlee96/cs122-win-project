@@ -17,6 +17,14 @@ body {
 input {
   vertical-align: top;
 }
+input[type="button"], input[type="submit"] {
+  background-color: #ECECEC;
+  color: #666666;
+  border-radius:5px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
+  border: 0;
+}
 input.large-search-text {
   font-size: 18px;
   text-indent: 30px;
@@ -31,14 +39,9 @@ input.large-search-text {
   outline: none;
 }
 input#large-search-button {
-  background-color: #ECECEC;
   margin-left: -20px;
   width: 50px;
   height: 50px;
-  border-radius:5px;
-  -moz-border-radius:5px;
-  -webkit-border-radius:5px;
-  border: 0;
   background-image: url('../img/search.png');
   background-size: 30px 30px;
   background-repeat: no-repeat;
@@ -83,14 +86,9 @@ input.dark-small-search-text:-ms-input-placeholder {
   color: #777777;
 }
 input#small-search-button {
-  background-color: #ECECEC;
   margin-left: -20px;
   width: 30px;
   height: 30px;
-  border-radius:5px;
-  -moz-border-radius:5px;
-  -webkit-border-radius:5px;
-  border: 0;
   background-image: url('../img/search.png');
   background-size: 30px 30px;
   background-repeat: no-repeat;
@@ -142,17 +140,12 @@ fieldset.stats {
   display: table-row;
   height: 110px;
 }
-#champion-recommendation-button {
-  color: #666666;
-  background-color: #ECECEC;
-  border-radius:5px;
-	-moz-border-radius:5px;
-	-webkit-border-radius:5px;
-  border: 0px;
-}
 .error {
   color: #FFD700;
   font-size: 20px;
+}
+.summoner-not-found {
+  text-align: center;
 }
 .description {
   padding-top: 50px;
@@ -190,12 +183,6 @@ fieldset.stats {
 }
 #champion-select-home-button {
   text-align: center;
-  color: #666666;
-  background-color: #ECECEC;
-  border-radius:5px;
-	-moz-border-radius:5px;
-	-webkit-border-radius:5px;
-  border: 0px;
 }
 #champion-select-form {
   display: inline-block;
@@ -212,14 +199,6 @@ fieldset.stats {
   height: 450px;
   border: 2px solid;
   padding: 10px;
-}
-#options-button {
-  color: #666666;
-  background-color: #ECECEC;
-  border-radius:3px;
-	-moz-border-radius:3px;
-	-webkit-border-radius:3px;
-  border: 0px;
 }
 #cs-container-0, #cs-container-1, #cs-container-2, #cs-container-3, #cs-container-4, #cs-container-5, #cs-container-6, #cs-container-7, #cs-container-8, #cs-container-9 {
   margin: 0 auto;

@@ -6,3 +6,7 @@ function getSummoner() {
 function goToChampionSelect() {
     location.href = "/championselect";
 };
+
+function retrieveSummoner() {
+    location.href = "?getsummoner=True";
+};

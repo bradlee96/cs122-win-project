@@ -3,7 +3,8 @@ from django.http import HttpResponseRedirect
 from .models import Summoner, Match, Junction
 from datetime import date, datetime
 from django.contrib import messages
-from .teambuilder import runit
+from .teambuilder import get_recommendation
+from .getsummoner import get_summoner
 import time, re
 
 OFFSET_EPOCH_WEEK_TO_SUNDAY = 345600
@@ -39,9 +40,9 @@ def championselect(request):
             context['role'] = request.GET['role']
             context['champion_select_summoner'] = request.GET['champion_select_summoner']
             summoner_list = Summoner.objects.filter(summoner_name=request.GET['champion_select_summoner'].lower())
-            if len(summoner_list) != 0:
+            if len(summoner_list) > 0:
                 summoner = summoner_list[0]
-                recommended_champion = runit(summoner.summoner_id, [x for x in ally_champions.values()], [x for x in enemy_champions.values()], context['role'])
+                recommended_champion = get_recommendation(summoner.summoner_id, [x for x in ally_champions.values()], [x for x in enemy_champions.values()], context['role'])
                 if recommended_champion != '':
                     context['recommended_champion'] = recommended_champion.upper()
                 else:
@@ -49,6 +50,13 @@ def championselect(request):
             else:
                 messages.error(request, 'Not a valid summoner, or not currently in our database.')
     return render(request, 'summonerstats/championselect.html', context)
+
+def summonernotfound(request, summoner_name):
+    if request.method == 'GET' and 'getsummoner' in request.GET:
+        get_summoner(summoner_name)
+    context = {}
+    context['summoner_name'] = summoner_name
+    return render(request, 'summonerstats/summonernotfound.html', context)
 
 def stats(request, summoner_name):
     '''Remember to comment'''
@@ -58,7 +66,7 @@ def stats(request, summoner_name):
     try:
         summoner = Summoner.objects.filter(summoner_name=summoner_name.lower())[0]
     except:
-        context['summoner_id'] = summoner_name
+        return HttpResponseRedirect('/summonernotfound/' + summoner_name)
     else:
         context['summoner'] = summoner
         if request.method == "GET":
