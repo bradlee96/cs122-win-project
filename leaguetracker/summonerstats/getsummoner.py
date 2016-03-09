@@ -2,6 +2,7 @@ import urllib.request
 import json
 import time
 import sqlite3
+import os
 
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
