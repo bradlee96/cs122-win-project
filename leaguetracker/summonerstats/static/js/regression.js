@@ -61,16 +61,6 @@ function linearRegression(X, Y) {
   return [ret[0], ret[1]];
 }
 
-function expRegression(X, Y) {
-  var ret;
-  var x = X;
-  var y = Y;
-  ret = regression(x, y, 'exp');
-  var base = Math.exp(ret[0]);
-  var coeff = Math.exp(ret[1]);
-  return [base, coeff];
-}
-
 /*
     TODO: this function is quite inefficient.
     Refactor it if there is problem with speed.
@@ -120,21 +110,6 @@ function fitData(data, typ) {
       x: function(y) {
         return (y - this.intercept) / this.slope;
       }
-    };
-  }
-  else if (type == 'exp' || type == 'exponential') {
-
-    ret = expRegression(x, y);
-    for (var i = 0; i < x.length; i++) {
-      res = ret[1] * Math.pow(ret[0], x[i]);
-      ypred.push([x[i], res]);
-    }
-    ypred.sort();
-
-    return {
-      data: ypred,
-      base: ret[0],
-      coeff: ret[1]
     };
   }
 }

@@ -1,17 +1,3 @@
-'''
-Need to add some sort of experience factor, maybe a linear/logistic function
-up to, say, like 50 games.
-M 5:30-7:30pm Horace RY 162
-Tu 10-12pm Qinqin RY 255
-
-
-Notes from Pan OH :
-
-Basically what we did. Maybe split functions for champion experience and affinity and then add an alpha, (1-alpha) sort of thing
-This is sort of what we did, we calculated purely on affinity and then applied a weight to it as a function of experience.
-
-'''
-import time
 import urllib.request
 import sqlite3
 import math
@@ -34,16 +20,22 @@ def get_champion_id_table(key):
 			champion_list.append('wukong')
 		else:
 			champion_list.append(champion.lower())
+
 	return champion_list
 
 def get_dict(filename, summoner_id, role):
-	conn = sqlite3.connect(filename)
+	'''
+	This function returns a simple dictionary with all the information that we need to recommend.
+	Lane/Role selection is also performed here
+	'''
+	conn = sqlite3.connect('Fiendish_Codex.db')
 	cursor = conn.cursor()
 	if role == "DUO_CARRY" or role == "DUO_SUPPORT":
 		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction WHERE summoner_id = {} AND lane = '{}' AND role = '{}'".format(summoner_id, "BOTTOM", role)).fetchall()
 	else:
 		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction WHERE summoner_id = {} AND lane = '{}'".format(summoner_id, role)).fetchall()
 	cleaned_match_list = []
+
 	for match in match_list:
 		temp = {}
 		temp['me'] = match[0]
@@ -55,37 +47,38 @@ def get_dict(filename, summoner_id, role):
 	return cleaned_match_list
 
 
-def calculate_win_rate_per_champion_wrt_others(matchlist):
+def get_pair_counts(matchlist, drafted):
 	'''
-	Note, doesn't actually calculate the winrate, only returns the count, but y'know close enough
-	Basically just want to add a bunch of shit so I can get some probs later
-	[champ][allies/enemies][ally/enemy][[0,0]]
-	Think about specific comopositions, the global weighting does not take that into account.
-	Eg. Play a lot of Annie, but only 1 game with Annie and shen
-	1 game of Annie and Shen, lost, but 1000 games of Annie
+	Returns a dictionary that has, for each champion the player has used, another dictionary with champions that they
+	have played with and the number of wins and total games.
+	e.g. {'A': {'enemies': {'B': [0, 1], 'C': [0, 1], 'D': [0, 1]}, 'allies':{...}, 'Q':{...}}
 	'''
-	bigdict = {}
-	start_time = time.clock()
+	pair_dict = {}
 	for match in matchlist:
-		bigdict.setdefault(match['me'],{'allies':{},'enemies':{}})
+		pair_dict.setdefault(match['me'],{'allies':{},'enemies':{}})
 		for ally in match['allies']:
-			bigdict[match['me']]['allies'].setdefault(ally,[0,0])
+			pair_dict[match['me']]['allies'].setdefault(ally,[0,0])
 			if match['winner'] == 1:
-				bigdict[match['me']]['allies'][ally][0] += 1
+				pair_dict[match['me']]['allies'][ally][0] += 1
 			else:
-				bigdict[match['me']]['allies'][ally][1] += 1
+				pair_dict[match['me']]['allies'][ally][1] += 1
 		for enemy in match['enemies']:
-			bigdict[match['me']]['enemies'].setdefault(enemy,[0,0])
+			pair_dict[match['me']]['enemies'].setdefault(enemy,[0,0])
 			if match['winner'] == 1:
-				bigdict[match['me']]['enemies'][enemy][0] += 1
+				pair_dict[match['me']]['enemies'][enemy][0] += 1
 			else:
-				bigdict[match['me']]['enemies'][enemy][1] += 1
+				pair_dict[match['me']]['enemies'][enemy][1] += 1
 
-	return bigdict
+	#This sections ensures that the recommender does not suggest a champion that has already been drafted.
+	for champ in drafted:
+		del pair_dict[champ]
+
+	return pair_dict
 
 def normalize_for_champ_experience(matchlist):
 	'''
 	Takes care of "Play a lot of A, but only 1 game with A and B"
+	Gives higher weight to champions that the player has many games on
 	'''
 	champ_experience_normalizer = {}
 	for match in matchlist:
@@ -98,17 +91,10 @@ def normalize_for_champ_experience(matchlist):
 
 def suggest(data, champ_experience_normalizer, allies, enemies):
 	'''
-	might wanna restructure the above so that we have our played champs in allies/enemies JKJK
-	loop through allies, put prob in dict [ally][our champ][prob], maybe [champ][ally][prob]
-	Do the same thing for enemies
-	then we add them all up
-	Also take into account how recent the champ was played
-	More ideas: add some factor for confidence(# of games played)
+	If someone has never played with a champion in the draft, we continue as if the champion weren't there
 
-	rename all these normalizing things
 	'''
 	dic = {}
-	#This thing aggregates the allies/enemies
 	for champ in data:
 		dic[champ] = {}
 		for ally in data[champ]['allies']:
@@ -117,18 +103,43 @@ def suggest(data, champ_experience_normalizer, allies, enemies):
 		for enemy in data[champ]['enemies']:
 			dic[champ][enemy] = normalize_pairs(sum(data[champ]['enemies'][enemy])) * data[champ]['enemies'][enemy][0] / sum(data[champ]['enemies'][enemy])
 
-	final_result = ['', 0]
+	#First pick case, want to return highest winrate & most experienced
 	if allies + enemies == []:
-		'''
-		First pick case, want to return highest winrate & most experienced
-		Aggregate all the allies and enemies into just champion, and applies the normalizing function
-		'''
-		for champ in dic:
+		return fitness_gen(dic, champ_experience_normalizer, None)
+
+	#This section checks for if the person has played any games with the other champions in the draft
+	#If they haven't, it defaults to the above case
+	for champ in dic:
+		has_least = False
+		for guy in allies + enemies:
+			try:
+				if dic[champ][guy]:
+					has_least = True
+					break
+			except KeyError:
+				pass
+
+	#If they have, we go through the allies and enemies to select a fitting champion.
+	#Note that if they have played with 8/9 drafted champions, the algorithm will just ignore the unplayed
+	if has_least == False:
+		return fitness_gen(dic, champ_experience_normalizer, None)
+	else:
+		return fitness_gen(dic, champ_experience_normalizer, allies + enemies)
+
+def fitness_gen(data, champ_experience_normalizer, iterator):
+	'''
+	This function calculated the fitness for each champion.
+	normalizer keeps the fitness between 0 and 1, so that having many unique pairs doesn't skew the data
+
+	'''
+	final_result = ['', -1]
+	if iterator == None:
+		for champ in data:
 			normalizing_for_champ_experience = champ_experience_normalizer[champ]
 			fitness = 0
 			normalizer = None
-			for guy in dic[champ]:
-				fitness += normalizing_for_champ_experience * dic[champ][guy]
+			for guy in data[champ]: #We iterate over the person's played champions
+				fitness += normalizing_for_champ_experience * data[champ][guy]
 				if normalizer == None:
 					normalizer = 1
 				else:
@@ -141,57 +152,56 @@ def suggest(data, champ_experience_normalizer, allies, enemies):
 				final_result = [champ, fitness]
 		return final_result[0]
 
-	for champ in dic:
-		normalizing_for_champ_experience = champ_experience_normalizer[champ]
-		fitness = 0
-		normalizer = None
-
-		for guy in allies + enemies:
-			try:
-				fitness += normalizing_for_champ_experience * dic[champ][guy]
+	else:
+		for champ in data:
+			normalizing_for_champ_experience = champ_experience_normalizer[champ]
+			fitness = 0
+			normalizer = None
+			for guy in iterator: #We iterate over the allies and enemies in the draft
+				fitness += normalizing_for_champ_experience * data[champ][guy]
 				if normalizer == None:
 					normalizer = 1
 				else:
 					normalizer += 1
-			except KeyError:
-				pass
 
-		if normalizer == None:
-			normalizer = 1
-		fitness = fitness / normalizer
-		if fitness > final_result[1]:
-			final_result = [champ, fitness]
-
-	return final_result[0]
+			if normalizer == None:
+				normalizer = 1
+			fitness = fitness / normalizer
+			if fitness > final_result[1]:
+				final_result = [champ, fitness]
+		return final_result[0]
 
 
 def normalize_pairs(pair_count):
 	'''
-	Takes care of "1 win with A and B" bias
-
-	A logistic growth function to weight games played with an ally champ or against an
-	enemy champion. We weight values more if there are more games because the sample
-	size is bigger and therefore more accurate.
+	Takes care of "1 win with A and B"
+	Gives weight to statistically significant pairs.
 	'''
 	return .85 / (1 + math.e ** ( -5 * (.05 * pair_count - .25))) + .15
 
 def get_recommendation(summoner_id, allies, enemies, role):
-	'''
-	Need to add default case
-	Need to add SQL stuff
-	'''
-
 	match_list = get_dict(DATABASE_FILENAME, summoner_id, role)
-	learned = calculate_win_rate_per_champion_wrt_others(match_list)
+
+	#Person has no champions capable of playing a certain role
+	if match_list == []:
+		return "insufficientdata"
+
+	learned = get_pair_counts(match_list, allies + enemies)
+
+	#Person has no champions for a certain role that are not within the draft
+	if learned == {}:
+		return "insufficientdata"
+
 	champ_experience_normalizer = normalize_for_champ_experience(match_list)
 	champion_list = get_champion_id_table(key)
 
 	for i in range(len(allies)):
-		allies[i] = allies[i].lower().replace(' ', '')
+		allies[i] = allies[i].lower().replace(' ','')
 
 	for i in range(len(enemies)):
-		enemies[i] = enemies[i].lower().replace(' ', '')
+		enemies[i] = enemies[i].lower().replace(' ','')
 
+	#Naming consistency
 	for champ in allies + enemies:
 		if champ[0:6] == "jarvan":
 			if champ in allies:
@@ -202,23 +212,9 @@ def get_recommendation(summoner_id, allies, enemies, role):
 				enemies.append("jarvaniv")
 			break
 
+	#In case of misspelled name
 	for champ in allies + enemies:
 		if not champ in champion_list:
-			print('ehrer')
-			return ''
+			return 'champerror'
 
 	return suggest(learned, champ_experience_normalizer, allies, enemies)
-
-# p = runit('ghibli studios', [],[], 'JUNGLE')
-# print(p)
-'''
-Freq of hero usage, correlation of pairs allies and enemies
-optimize on experience, high score with heroes with and against
-dont forget to give John parents' numbers
-for the website, would be super nice to have on the draft input like, pictures of the champions that were picked.
-Found champion squares on wikia
-
-'''
-'''
-nidalee issue
-'''

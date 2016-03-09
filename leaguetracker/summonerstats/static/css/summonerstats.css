@@ -94,6 +94,10 @@ input#small-search-button {
   background-repeat: no-repeat;
   background-position: center center;
 }
+input#getSummoner {
+  font-size: 14px;
+  height: 25px;
+}
 label {
   font-size: 13px;
 }
@@ -141,6 +145,7 @@ fieldset.stats {
   height: 110px;
 }
 .error {
+  text-align: center;
   color: #FFD700;
   font-size: 20px;
 }
@@ -200,7 +205,7 @@ fieldset.stats {
   border: 2px solid;
   padding: 10px;
 }
-#cs-container-0, #cs-container-1, #cs-container-2, #cs-container-3, #cs-container-4, #cs-container-5, #cs-container-6, #cs-container-7, #cs-container-8, #cs-container-9 {
+#cs-container-0, #cs-container-1, #cs-container-2, #cs-container-3, #cs-container-4, #cs-container-5, #cs-container-6, #cs-container-7, #cs-container-8, #cs-container-9, #cs-container-10, #cs-container-11 {
   margin: 0 auto;
   margin-bottom: 20px;
 }

@@ -41,7 +41,6 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	except Exception:
 		latest_match = 0
 
-	print(latest_match)
 	conn.close()
 
 	try:
@@ -72,7 +71,6 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 			to_append['role'] = match['role']
 			match_list.append(to_append)
 			key_counter += 1
-	print(len(match_list))
 	return match_list
 
 
@@ -138,9 +136,13 @@ def add_to_SQL(s_id, s_name, match_list):
 	'''
 	Creates a table for the data necessary to make graphs, and another table for the team info for the team builder
 	'''
-	SQL_summoner_table = ['summoner_id', 'summoner_name', 'winrate', 'cs', 'kills', 'deaths', 'assists', 'kda', 'gold', 'cs_per_min', 'gold_per_min', 'wards_placed', 'wards_killed', 'matches_played']
-	SQL_match_table = ['match_id', 'season', 'time_stamp', 'match_duration']
-	SQL_junction_table = ['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold', 'wards_placed', 'wards_killed', 'allies', 'enemies']
+	SQL_summoner_table = ['summoner_id', 'summoner_name', 'winrate', 'cs', 'kills', 'deaths', 'assists',\
+	 'kda', 'gold', 'cs_per_min', 'gold_per_min', 'total_damage_dealt_champions', 'wards_placed', 'wards_killed', 'matches_played']
+
+	SQL_match_table = ['match_id UNIQUE', 'season', 'time_stamp', 'match_duration']
+
+	SQL_junction_table = ['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', \
+	'kills', 'deaths','assists','gold', 'total_damage_dealt_champions','wards_placed', 'wards_killed', 'allies', 'enemies']
 
 	summoner_values = []
 	match_values = []
@@ -171,6 +173,7 @@ def add_to_SQL(s_id, s_name, match_list):
 			match['stats']['deaths'],
 			match['stats']['assists'],
 			match['stats']['goldEarned'],
+			match['stats']['totalDamageDealtToChampions'],
 			match['stats']['wardsPlaced'],
 			match['stats']['wardsKilled'],
 			'|'.join(match['allies']),
@@ -182,11 +185,11 @@ def add_to_SQL(s_id, s_name, match_list):
 	cursor = conn.cursor()
 
 	try:
-		conn.executemany('INSERT INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
+		conn.executemany('INSERT OR IGNORE INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
 		conn.executemany('INSERT INTO Junction VALUES ({})'.format(','.join('?' * len(junction_values[0]))), (junction_values))
-	except Exception: #Basically if the db does not even exist yet
+	except Exception: #If the db does not even exist yet
 		conn.execute('''CREATE TABLE Matches ({})'''.format(','.join(SQL_match_table)))
-		conn.executemany('INSERT INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
+		conn.executemany('INSERT OR IGNORE INTO Matches VALUES ({})'.format(','.join('?' * len(match_values[0]))), (match_values))
 		conn.execute('''CREATE TABLE Junction ({})'''.format(','.join(SQL_junction_table)))
 		conn.executemany('INSERT INTO Junction VALUES ({})'.format(','.join('?' * len(junction_values[0]))), (junction_values))
 
@@ -215,13 +218,9 @@ def add_to_SQL(s_id, s_name, match_list):
 def update_global_values(summoner_id, cursor):
 	'''
 	This function updates the global values for a summoner
-
-	winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, wards_placed, wards_killed would be good
-
-	['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', 'kills', 'deaths','assists','gold', 'wards_placed', 'wards_killed', 'allies', 'enemies']
 	'''
-	select_statement = 'match_duration, winner, cs, kills, deaths, assists, gold, wards_placed, wards_killed'
-	separate_info = cursor.execute("SELECT {} from Matches JOIN Junction ON Matches.match_id = Junction.match_id WHERE summoner_id = {}".format(select_statement, summoner_id)).fetchall()
+	select_statement = 'match_duration, winner, cs, kills, deaths, assists, gold, wards_placed, wards_killed, total_damage_dealt_champions'
+	separate_info = cursor.execute("SELECT {} from Matches JOIN Junction ON Matches.match_id = Junction.match_id WHERE summoner_id = ?".format(select_statement), (summoner_id,)).fetchall()
 
 	total_duration = 0
 	winrate = 0
@@ -235,6 +234,7 @@ def update_global_values(summoner_id, cursor):
 	gold_per_min = 0
 	wards_placed = 0
 	wards_killed = 0
+	total_damage_dealt_champions = 0
 
 	for match in separate_info:
 		total_duration += match[0]
@@ -246,13 +246,14 @@ def update_global_values(summoner_id, cursor):
 		gold += match[6] / len(separate_info)
 		wards_placed += match[7] / len(separate_info)
 		wards_killed += match[8] / len(separate_info)
+		total_damage_dealt_champions += match[9] / len(separate_info)
 
 	winrate = winrate/len(separate_info)
 	cs_per_min = cs * len(separate_info) / (total_duration / 60)
 	gold_per_min = gold * len(separate_info) / (total_duration / 60)
 	kda = (kills + assists) / max(1, deaths)
 
-	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, wards_placed, wards_killed, len(separate_info)]
+	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, total_damage_dealt_champions, wards_placed, wards_killed, len(separate_info)]
 
 def get_summoner(summoner_name, save_json = False, write_SQL = True):
 	print('Start:', time.clock())
@@ -262,9 +263,8 @@ def get_summoner(summoner_name, save_json = False, write_SQL = True):
 		summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format((summoner_name.replace(' ','')), key))
 		summoner_info_not_byte = summoner_info.read().decode('utf-8')
 		summoner_id = json.loads(summoner_info_not_byte)[summoner_name.replace(' ','')]['id']
-	except urllib.error.HTTPError: #Probably no summoner name exists
-		print('Summoner name not found.')
-		return
+	except urllib.error.HTTPError: #Summoner Name doesn't exist
+		return 'Summoner name not found.'
 
 	print('Pulling Matches')
 	matches = get_matches(summoner_name, summoner_id, key)
@@ -272,7 +272,7 @@ def get_summoner(summoner_name, save_json = False, write_SQL = True):
 	if type(matches) != list:
 		print(matches)
 		print('Finish:', time.clock())
-		return
+		return matches
 
 	if save_json == True:
 		print('Saving Jsons')

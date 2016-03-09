@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect
 from .models import Summoner, Match, Junction
 from datetime import date, datetime
 from django.contrib import messages
+from django.contrib.messages import get_messages
 from .teambuilder import get_recommendation
 from .getsummoner import get_summoner
 import time, re
@@ -38,31 +39,54 @@ def championselect(request):
         context.update(enemy_champions)
         if 'role' in request.GET:
             context['role'] = request.GET['role']
-            context['champion_select_summoner'] = request.GET['champion_select_summoner']
+            context['champion_select_summoner'] = request.GET['champion_select_summoner'].title()
             summoner_list = Summoner.objects.filter(summoner_name=request.GET['champion_select_summoner'].lower())
             if len(summoner_list) > 0:
                 summoner = summoner_list[0]
                 recommended_champion = get_recommendation(summoner.summoner_id, [x for x in ally_champions.values()], [x for x in enemy_champions.values()], context['role'])
-                if recommended_champion != '':
-                    context['recommended_champion'] = recommended_champion.capitalize()
-                else:
+                if recommended_champion == 'insufficientdata':
+                    messages.error(request, 'This summoner has not played enough games as this role.')
+                elif recommended_champion == 'champerror':
                     messages.error(request, 'An invalid champion name was entered.')
+                else:
+                    context['recommended_champion'] = recommended_champion.capitalize()
+                    print(recommended_champion)
+                    matches = summoner.junction_set.filter(champion=recommended_champion)
+                    num_matches = len(matches)
+                    context['matches_played'] = num_matches
+                    wins, kills, deaths, assists = 0.0, 0.0, 0.0, 0.0
+                    for match in matches:
+                        wins += match.winner
+                        kills += match.kills
+                        deaths += match.deaths
+                        assists += match.assists
+                    context['winrate'] ='{:.2f}'.format(100 * wins / max(1,num_matches)) + '%'
+                    context['kda'] = (kills + assists) / max(1, deaths)
             else:
                 messages.error(request, 'Not a valid summoner, or not currently in our database.')
     return render(request, 'summonerstats/championselect.html', context)
 
 def summonernotfound(request, summoner_name):
     if request.method == 'GET' and 'getsummoner' in request.GET:
-        get_summoner(summoner_name)
+        error_message = get_summoner(summoner_name)
+        if type(error_message) != list:
+            messages.error(request, error_message)
         return HttpResponseRedirect('/summoner/' + summoner_name)
     context = {}
-    context['summoner_name'] = summoner_name
+    context['summoner_name'] = summoner_name.title()
     return render(request, 'summonerstats/summonernotfound.html', context)
 
 def stats(request, summoner_name):
     '''Remember to comment'''
-    if request.method == "GET" and 'summoner' in request.GET:
-        return HttpResponseRedirect('/summoner/' + request.GET['summoner'])
+    storage = get_messages(request)
+    if request.method == "GET":
+        if 'getsummoner' in request.GET:
+            error_message = get_summoner(summoner_name)
+            if type(error_message) != list:
+                messages.error(request, error_message)
+            return HttpResponseRedirect('/summoner/' + summoner_name)
+        if 'summoner' in request.GET:
+            return HttpResponseRedirect('/summoner/' + request.GET['summoner'])
     context = {}
     try:
         summoner = Summoner.objects.filter(summoner_name=summoner_name.lower())[0]
@@ -70,6 +94,7 @@ def stats(request, summoner_name):
         return HttpResponseRedirect('/summonernotfound/' + summoner_name)
     else:
         context['summoner'] = summoner
+        context['summoner_name'] = summoner.summoner_name.title()
         if request.method == "GET":
             if 'interval' in request.GET and 'chartsize' in request.GET and 'role' in request.GET:
                 context['chart'] = True
@@ -104,6 +129,9 @@ def stats(request, summoner_name):
 
                 num_time_stamps = get_num_time_stamps(time_interval, time_start, time_end)
 
+                matches_played = [0] * num_time_stamps
+                winrate_values = [0] * num_time_stamps
+                damage_dealt_values = [0] * num_time_stamps
                 kill_values = [0] * num_time_stamps
                 death_values = [0] * num_time_stamps
                 assist_values = [0] * num_time_stamps
@@ -114,24 +142,25 @@ def stats(request, summoner_name):
                 gold_per_min_values = [0] * num_time_stamps
                 wards_placed_values = [0] * num_time_stamps
                 wards_killed_values = [0] * num_time_stamps
-                average_counter = [0.0] * num_time_stamps
                 if context['role'] == 'All':
                     for summoner_match in matches:
                         match_duration = summoner_match.match.match_duration/60.0
                         time_stamp = summoner_match.match.time_stamp
                         time_stamp_category = get_epoch_time_category(time_stamp, time_interval)
                         index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
-                        average_counter[index] += 1
-                        kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, average_counter)
-                        death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, average_counter)
-                        assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, average_counter)
-                        kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, average_counter)
-                        cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, average_counter)
-                        gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, average_counter)
-                        cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, average_counter)
-                        gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, average_counter)
-                        wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, average_counter)
-                        wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, average_counter)
+                        matches_played[index] += 1
+                        winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
+                        damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                        kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
+                        death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
+                        assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
+                        kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, matches_played)
+                        cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, matches_played)
+                        gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, matches_played)
+                        cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, matches_played)
+                        gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, matches_played)
+                        wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, matches_played)
+                        wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, matches_played)
                 else:
                     for summoner_match in matches:
                         if summoner_match.role == role and summoner_match.lane == lane:
@@ -139,50 +168,59 @@ def stats(request, summoner_name):
                             time_stamp = summoner_match.match.time_stamp
                             time_stamp_category = get_epoch_time_category(time_stamp, time_interval)
                             index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
-                            average_counter[index] += 1
-                            kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, average_counter)
-                            death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, average_counter)
-                            assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, average_counter)
-                            kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, average_counter)
-                            cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, average_counter)
-                            gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, average_counter)
-                            cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, average_counter)
-                            gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, average_counter)
-                            wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, average_counter)
-                            wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, average_counter)
+                            matches_played[index] += 1
+                            winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
+                            damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                            kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
+                            death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
+                            assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
+                            kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, matches_played)
+                            cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, matches_played)
+                            gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, matches_played)
+                            cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, matches_played)
+                            gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, matches_played)
+                            wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, matches_played)
+                            wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, matches_played)
                         elif summoner_match.role == 'DUO' and lane == 'BOTTOM':
                             if summoner_match.cs/match_duration > CUTOFF_CS_PER_MIN and role == 'DUO_CARRY':
                                 match_duration = summoner_match.match.match_duration/60.0
                                 time_stamp = summoner_match.match.time_stamp
                                 time_stamp_category = get_epoch_time_category(time_stamp, time_interval)
                                 index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
-                                average_counter[index] += 1
-                                kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, average_counter)
-                                death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, average_counter)
-                                assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, average_counter)
-                                kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, average_counter)
-                                cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, average_counter)
-                                gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, average_counter)
-                                cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, average_counter)
-                                gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, average_counter)
-                                wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, average_counter)
-                                wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, average_counter)
+                                matches_played[index] += 1
+                                winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
+                                damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                                kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
+                                death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
+                                assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
+                                kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, matches_played)
+                                cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, matches_played)
+                                gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, matches_played)
+                                cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, matches_played)
+                                gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, matches_played)
+                                wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, matches_played)
+                                wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, matches_played)
                             elif summoner_match.cs/match_duration <= CUTOFF_CS_PER_MIN and role == 'DUO_SUPPORT':
                                 match_duration = summoner_match.match.match_duration/60.0
                                 time_stamp = summoner_match.match.time_stamp
                                 time_stamp_category = get_epoch_time_category(time_stamp, time_interval)
                                 index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
-                                average_counter[index] += 1
-                                kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, average_counter)
-                                death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, average_counter)
-                                assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, average_counter)
-                                kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, average_counter)
-                                cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, average_counter)
-                                gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, average_counter)
-                                cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, average_counter)
-                                gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, average_counter)
-                                wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, average_counter)
-                                wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, average_counter)
+                                matches_played[index] += 1
+                                winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
+                                damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                                kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
+                                death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
+                                assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
+                                kda_values[index] = update_average(kda_values, ((summoner_match.kills + summoner_match.assists)/max(1,summoner_match.deaths)), index, summoner_match, matches_played)
+                                cs_values[index] = update_average(cs_values, summoner_match.cs, index, summoner_match, matches_played)
+                                gold_values[index] = update_average(gold_values, summoner_match.gold, index, summoner_match, matches_played)
+                                cs_per_min_values[index] = update_average(cs_per_min_values, summoner_match.cs/match_duration, index, summoner_match, matches_played)
+                                gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, matches_played)
+                                wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, matches_played)
+                                wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, matches_played)
+                context['matches_played'] = matches_played
+                context['winrate_values'] = winrate_values
+                context['damage_dealt_values'] = damage_dealt_values
                 context['kill_values'] = kill_values
                 context['death_values'] = death_values
                 context['assist_values'] = assist_values
@@ -222,8 +260,8 @@ def get_epoch_time_category(epoch_time, time_interval):
         category = epoch_time // EPOCH_TIME_COUNTERS[time_interval] * EPOCH_TIME_COUNTERS[time_interval]
     return category
 
-def update_average(values, stat, index, summoner_match, average_counter):
-    return values[index] * (1 - 1/average_counter[index]) + stat / average_counter[index]
+def update_average(values, stat, index, summoner_match, matches_played):
+    return values[index] * (1 - 1/float(matches_played[index])) + stat / float(matches_played[index])
 
 def get_relative_epoch_time_category(epoch_time_category, start_time_category, time_interval):
     '''Remember to comment'''

@@ -21,6 +21,7 @@ class Summoner(models.Model):
     summoner_id = models.IntegerField(primary_key=True)
     summoner_name = models.CharField(max_length=20)
     winrate = models.FloatField()
+    total_damage_dealt_champions = models.FloatField()
     cs = models.FloatField()
     kills = models.FloatField()
     deaths = models.FloatField()
@@ -34,7 +35,7 @@ class Summoner(models.Model):
     matches_played = models.FloatField()
     # Model.refresh_from_db
 
-    def get_win_rate(self):
+    def get_winrate(self):
         return '{:.2f}'.format(100 * self.winrate) + '%'
 
     def __str__(self):
@@ -52,10 +53,11 @@ class Junction(models.Model):
     lane = models.CharField(max_length=20)
     role = models.CharField(max_length=20)
     winner = models.IntegerField()
-    cs = models.IntegerField()
+    total_damage_dealt_champions = models.FloatField()
     kills = models.IntegerField()
     deaths = models.IntegerField()
     assists = models.IntegerField()
+    cs = models.IntegerField()
     gold = models.IntegerField()
     wards_placed = models.IntegerField()
     wards_killed = models.IntegerField()
