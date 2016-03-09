@@ -163,11 +163,14 @@ def fitness_gen(data, champ_experience_normalizer, iterator):
 			fitness = 0
 			normalizer = None
 			for guy in iterator: #We iterate over the allies and enemies in the draft
-				fitness += normalizing_for_champ_experience * data[champ][guy]
-				if normalizer == None:
-					normalizer = 1
-				else:
-					normalizer += 1
+				try:
+					fitness += normalizing_for_champ_experience * data[champ][guy]
+					if normalizer == None:
+						normalizer = 1
+					else:
+						normalizer += 1
+				except KeyError:
+					pass
 
 			if normalizer == None:
 				normalizer = 1
