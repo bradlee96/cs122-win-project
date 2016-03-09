@@ -188,6 +188,12 @@ def get_recommendation(summoner_id, allies, enemies, role):
 	if match_list == []:
 		return "insufficientdata"
 
+	for i in range(len(allies)):
+		allies[i] = allies[i].lower().replace(' ','')
+
+	for i in range(len(enemies)):
+		enemies[i] = enemies[i].lower().replace(' ','')
+
 	learned = get_pair_counts(match_list, allies + enemies)
 
 	#Person has no champions for a certain role that are not within the draft
@@ -196,12 +202,6 @@ def get_recommendation(summoner_id, allies, enemies, role):
 
 	champ_experience_normalizer = normalize_for_champ_experience(match_list)
 	champion_list = get_champion_id_table(key)
-
-	for i in range(len(allies)):
-		allies[i] = allies[i].lower().replace(' ','')
-
-	for i in range(len(enemies)):
-		enemies[i] = enemies[i].lower().replace(' ','')
 
 	#Naming consistency
 	for champ in allies + enemies:
