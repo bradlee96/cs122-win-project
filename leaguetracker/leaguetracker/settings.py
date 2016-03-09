@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'leaguetracker.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/leaguetracker/Fiendish_Codex.db',
+        'NAME': os.path.join(BASE_DIR, 'Fiendish_Codex.db'),
     }
 }
 
