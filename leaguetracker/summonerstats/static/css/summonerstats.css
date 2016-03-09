@@ -161,8 +161,10 @@ fieldset.stats {
   color: #FFFF00;
 }
 .all-stats {
-  width: 100%;
-  overflow: hidden;
+  width: 1250px;
+  display: table;
+  margin: 0 auto;
+  overflow: scroll;
 }
 .lifetime-stats-with-chart {
   margin-left: 60px;
