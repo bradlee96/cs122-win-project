@@ -2,9 +2,11 @@ import urllib.request
 import sqlite3
 import math
 import json
+import os
 
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
-DATABASE_FILENAME = 'Fiendish_Codex.db'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
 
 
 def get_champion_id_table(key):
@@ -28,7 +30,7 @@ def get_dict(filename, summoner_id, role):
 	This function returns a simple dictionary with all the information that we need to recommend.
 	Lane/Role selection is also performed here
 	'''
-	conn = sqlite3.connect('Fiendish_Codex.db')
+	conn = sqlite3.connect(filename)
 	cursor = conn.cursor()
 	if role == "DUO_CARRY" or role == "DUO_SUPPORT":
 		match_list = cursor.execute("SELECT champion, allies, enemies, winner from Junction WHERE summoner_id = {} AND lane = '{}' AND role = '{}'".format(summoner_id, "BOTTOM", role)).fetchall()

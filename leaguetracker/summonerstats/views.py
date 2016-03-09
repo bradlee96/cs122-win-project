@@ -71,6 +71,8 @@ def summonernotfound(request, summoner_name):
         error_message = get_summoner(summoner_name)
         if type(error_message) != list:
             messages.error(request, error_message)
+        else:
+            messages.success(request, 'Request successful!')
         return HttpResponseRedirect('/summoner/' + summoner_name)
     context = {}
     context['summoner_name'] = summoner_name.title()
@@ -84,6 +86,8 @@ def stats(request, summoner_name):
             error_message = get_summoner(summoner_name)
             if type(error_message) != list:
                 messages.error(request, error_message)
+            else:
+                messages.success(request, 'Request successful!')
             return HttpResponseRedirect('/summoner/' + summoner_name)
         if 'summoner' in request.GET:
             return HttpResponseRedirect('/summoner/' + request.GET['summoner'])
