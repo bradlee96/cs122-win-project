@@ -73,7 +73,10 @@ def get_pair_counts(matchlist, drafted):
 
 	#This sections ensures that the recommender does not suggest a champion that has already been drafted.
 	for champ in drafted:
-		del pair_dict[champ]
+		try:
+			del pair_dict[champ]
+		except KeyError:
+			pass
 
 	return pair_dict
 
