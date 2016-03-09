@@ -7,7 +7,8 @@ key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
 key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
 key_list = [key, key2, key3]
-DATABASE_FILENAME = 'Fiendish_Codex.db'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
 
 def get_champion_id_table(key):
 	'''
@@ -133,7 +134,7 @@ def export_matches(file_name, matchlist):
 def add_to_SQL(s_id, s_name, match_list):
 	'''
 	Creates/updates the SQL database. We have 3 tables as shown below.
-	The Summoner table keeps track of summoner-specific information, the Match table keeps track of the matches 
+	The Summoner table keeps track of summoner-specific information, the Match table keeps track of the matches
 	that all the summoners have played, and the Junction table stores the data that are part of both.
 	Summoner and Junction can be joined on summoner_id, Junction and Match can be joined on the match_id
 
