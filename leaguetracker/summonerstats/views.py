@@ -100,7 +100,7 @@ def stats(request, summoner_name):
         context['summoner'] = summoner
         context['summoner_name'] = summoner.summoner_name.title()
         if request.method == "GET":
-            if 'interval' in request.GET and 'chartsize' in request.GET and 'role' in request.GET:
+            if 'interval' in request.GET:
                 context['chart'] = True
 
                 time_interval = request.GET['interval']
@@ -123,6 +123,15 @@ def stats(request, summoner_name):
                 if request.GET['chartsize'] == 'large':
                     context['large'] = True
 
+                if request.GET['mingames'] == '':
+                    min_games = 1
+                else:
+                    try:
+                        min_games = int(request.GET['mingames'])
+                    except ValueError:
+                        messages.error(request, 'Not a valid integer.')
+                        return HttpResponseRedirect('/summoner/' + summoner_name)
+
                 matches = summoner.junction_set.all().order_by('match__time_stamp')
 
                 time_start = matches[0].match.time_stamp
@@ -135,7 +144,7 @@ def stats(request, summoner_name):
 
                 matches_played = [0] * num_time_stamps
                 winrate_values = [0] * num_time_stamps
-                damage_dealt_values = [0] * num_time_stamps
+                damage_to_champions_per_min_values = [0] * num_time_stamps
                 kill_values = [0] * num_time_stamps
                 death_values = [0] * num_time_stamps
                 assist_values = [0] * num_time_stamps
@@ -154,7 +163,7 @@ def stats(request, summoner_name):
                         index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
                         matches_played[index] += 1
                         winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
-                        damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                        damage_to_champions_per_min_values[index] = update_average(damage_to_champions_per_min_values, summoner_match.total_damage_dealt_champions/match_duration, index, summoner_match, matches_played)
                         kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
                         death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
                         assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
@@ -174,7 +183,7 @@ def stats(request, summoner_name):
                             index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
                             matches_played[index] += 1
                             winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
-                            damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                            damage_to_champions_per_min_values[index] = update_average(damage_to_champions_per_min_values, summoner_match.total_damage_dealt_champions/match_duration, index, summoner_match, matches_played)
                             kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
                             death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
                             assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
@@ -193,7 +202,7 @@ def stats(request, summoner_name):
                                 index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
                                 matches_played[index] += 1
                                 winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
-                                damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                                damage_to_champions_per_min_values[index] = update_average(damage_to_champions_per_min_values, summoner_match.total_damage_dealt_champions/match_duration, index, summoner_match, matches_played)
                                 kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
                                 death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
                                 assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
@@ -211,7 +220,7 @@ def stats(request, summoner_name):
                                 index = get_relative_epoch_time_category(time_stamp_category, time_start_category, time_interval)
                                 matches_played[index] += 1
                                 winrate_values[index] = update_average(winrate_values, summoner_match.winner, index, summoner_match, matches_played)
-                                damage_dealt_values[index] = update_average(damage_dealt_values, summoner_match.total_damage_dealt_champions, index, summoner_match, matches_played)
+                                damage_to_champions_per_min_values[index] = update_average(damage_to_champions_per_min_values, summoner_match.total_damage_dealt_champions/match_duration, index, summoner_match, matches_played)
                                 kill_values[index] = update_average(kill_values, summoner_match.kills, index, summoner_match, matches_played)
                                 death_values[index] = update_average(death_values, summoner_match.deaths, index, summoner_match, matches_played)
                                 assist_values[index] = update_average(assist_values, summoner_match.assists, index, summoner_match, matches_played)
@@ -222,9 +231,10 @@ def stats(request, summoner_name):
                                 gold_per_min_values[index] = update_average(gold_per_min_values, summoner_match.gold/match_duration, index, summoner_match, matches_played)
                                 wards_placed_values[index] = update_average(wards_placed_values, summoner_match.wards_placed, index, summoner_match, matches_played)
                                 wards_killed_values[index] = update_average(wards_killed_values, summoner_match.wards_killed, index, summoner_match, matches_played)
+                context['min_games'] = min_games
                 context['matches_played'] = matches_played
                 context['winrate_values'] = winrate_values
-                context['damage_dealt_values'] = damage_dealt_values
+                context['damage_to_champions_per_min_values'] = damage_to_champions_per_min_values
                 context['kill_values'] = kill_values
                 context['death_values'] = death_values
                 context['assist_values'] = assist_values

@@ -184,6 +184,10 @@
                 <input id="gs2" type="radio" name="chartsize" value="large">
                 <label for="gs2">Large</label><br>
               </fieldset>
+              <fieldset class='stats'>
+                <legend class='sub'>Min. Games:</legend>
+                <input type="text" name="mingames" placeholder="Default = 1" style="color: #000">Only includes points with at least <i>n</i> games.
+              </fieldset>
               <br><br><br><br><br><br>
               <input type="submit" id="options-button" value="Graph!" onClick="">
               <p class='form-caveat'>*Required</p>
@@ -201,9 +205,10 @@
         timeStart = {{ time_start|safe }};
         timeInterval = {{ time_interval }};
         timeIntervalName = "{{ time_interval_name }}";
+        minGames = {{ min_games|safe }};
         matchesPlayed = {{ matches_played|safe }};
         winrateValues = {{ winrate_values|safe }};
-        damageDealtValues = {{ damage_dealt_values|safe }};
+        damageToChampionsPerMinValues = {{ damage_to_champions_per_min_values|safe }};
         killValues = {{ kill_values|safe }};
         deathValues = {{ death_values|safe }};
         assistValues = {{ assist_values|safe }};
@@ -215,7 +220,7 @@
         wardsPlacedValues = {{ wards_placed_values|safe }};
         wardsKilledValues = {{ wards_killed_values|safe }};
         winrateRegValues = [];
-        damageDealtRegValues = [];
+        damageToChampionsPerMinRegValues = [];
         killRegValues = [];
         deathRegValues = [];
         assistRegValues = [];
@@ -227,10 +232,10 @@
         wardsPlacedRegValues = [];
         wardsKilledRegValues = [];
         for (i = 0; i < matchesPlayed.length; i++) {
-            if (matchesPlayed[i] == 0) {
+            if (matchesPlayed[i] < minGames) {
                 matchesPlayed[i] = null;
                 winrateValues[i] = null;
-                damageDealtValues[i] = null;
+                damageToChampionsPerMinValues[i] = null;
                 killValues[i] = null;
                 deathValues[i] = null;
                 assistValues[i] = null;
@@ -246,8 +251,7 @@
                 j = Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]) + timeInterval * i;
                 winrateValues[i] = winrateValues[i] * 100;
                 winrateRegValues.push([j, winrateValues[i]]);
-                damageDealtValues[i] = goldValues[i] / 1000;
-                damageDealtRegValues.push([j, damageDealtValues[i]]);
+                damageToChampionsPerMinRegValues.push([j, damageToChampionsPerMinValues[i]]);
                 killRegValues.push([j, killValues[i]]);
                 deathRegValues.push([j, deathValues[i]]);
                 assistRegValues.push([j, assistValues[i]]);
@@ -268,7 +272,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Win Rate<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Win Rate<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -362,7 +366,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Damage Dealt<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Damage to Champions per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -387,11 +391,8 @@
                 }
             },
             yAxis: [{ // Left axis
-                labels: {
-                    format: '{value}K'
-                },
                 title: {
-                    text: 'Damage Dealt to Champions'
+                    text: 'Damage to Champions per Minute'
                 },
             }, { // Right axis
                 title: {
@@ -403,7 +404,7 @@
                 xDateFormat: 'Start of Period: %b %e, %Y',
                 valueDecimals: 1,
                 shared: true,
-                valueSuffix: 'K Damage'
+                valueSuffix: ' Damage per Min'
             },
             plotOptions: {
                 series: {
@@ -415,8 +416,8 @@
                 }
             },
             series: [{
-                name: 'Damage Dealt to Champions',
-                data: damageDealtValues,
+                name: 'Damage to champions per Min',
+                data: damageToChampionsPerMinValues,
                 pointStart: Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]),
                 pointInterval: timeInterval,
                 lineWidth : 0,
@@ -430,7 +431,7 @@
                 marker: { enabled: false, radius: 0 },
                 /* function returns data for trend-line */
                 data: (function() {
-                  return fitData(damageDealtRegValues).data;
+                  return fitData(damageToChampionsPerMinRegValues).data;
                 })()
             }, {
                 name: 'Games Played',
@@ -454,7 +455,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Number of Kills<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Kills<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -543,7 +544,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Number of Deaths<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Deaths<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -632,7 +633,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Number of Assists<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Assists<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -721,7 +722,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average KDA Ratio<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'KDA Ratio<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -810,7 +811,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Creep Score (CS)<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Creep Score (CS)<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -899,7 +900,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Gold Earned<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Gold Earned<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -991,7 +992,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Creep Score (CS) per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Creep Score (CS) per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -1029,7 +1030,7 @@
                 xDateFormat: 'Start of Period: %b %e, %Y',
                 valueDecimals: 1,
                 shared: true,
-                valueSuffix: ' CS per min'
+                valueSuffix: ' CS per Min'
             },
             plotOptions: {
                 series: {
@@ -1080,7 +1081,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Gold per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Gold per Minute<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -1169,7 +1170,7 @@
                 marginBottom: 105
             },
             title: {
-                text: 'Average Number of Wards Placed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+                text: 'Wards Placed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
             },
             subtitle: {
                 text: 'The omission of certain data points represent times when no games were played.'
@@ -1258,7 +1259,7 @@
               marginBottom: 105
           },
           title: {
-              text: 'Average Number of Wards Killed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
+              text: 'Wards Killed<br/>(Role = ' + role + ', Interval = ' + timeIntervalName + ')'
           },
           subtitle: {
               text: 'The omission of certain data points represent times when no games were played.'
