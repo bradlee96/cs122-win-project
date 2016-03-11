@@ -3,6 +3,12 @@ import json
 import time
 import sqlite3
 import os
+import sys
+
+import multiprocessing
+import collections
+from functools import partial
+import speedlimit
 
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
@@ -10,6 +16,10 @@ key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
 key_list = [key, key2, key3]
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
+LIMITER = speedlimit.SpeedLimit(2.35) #500 per 10 min * 3 keys => 2.5 per sec, little less to be safe
+#Meant to make the code update the database more frequently. However, due to the nature of multiprocessing, it seems that
+#it also controls how many simultaneous calls are made to the API?
+UPDATE_FREQUENCY = 9
 
 def get_champion_id_table(key):
 	'''
@@ -60,22 +70,40 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	except KeyError:
 		pass
 
-	match_list = []
-	key_counter = 1
+	matches = matches['matches']
+	return matches
+
+def parse_matches(match_list, summoner_id, summoner_name):
+	#We reverse so that the oldest games are processed first, it in case of interruption the procedure for getting the latest game still functions
+	match_list.reverse()
+
 	champion_id_table = get_champion_id_table(key)
 
-	for match in matches['matches']:
-		if match['region'] != 'NA': #Only for North America
-			continue
-		else:
-			#Our keys are limited to 10 requests every 10 seconds, so we cycle through them
-			to_append = get_match_info_for_summoner(match, key_list[key_counter % len(key_list)], summoner_id, champion_id_table)
-			to_append['lane'] = match['lane']
-			to_append['role'] = match['role']
-			match_list.append(to_append)
-			key_counter += 1
-	return match_list
+	#the map below only accepts a function with one argument, and the other arguments are static anyways
+	func = partial(process_match, summoner_id = summoner_id)
+	func2 = partial(func, champion_id_table = champion_id_table)
 
+	#We moved to using a multiprocessing approach since the limiting factor wasn't computational speed, but rather server connection speed
+	#Now we are very obviously limited by the API keys. Should we ever get a production key a just a few constants have to be changed
+	for block in [match_list[i:i + UPDATE_FREQUENCY] for i in range(0, len(match_list), UPDATE_FREQUENCY)]:
+		pool = multiprocessing.Pool(len(key_list), maxtasksperchild = 3) #We don't want any 1 process hogging
+		results = pool.map(func2, LIMITER.speed_limit_iter(block))
+		pool.close() 
+		pool.join() 
+		add_to_SQL(summoner_id, summoner_name, results)
+
+def process_match(match, summoner_id, champion_id_table):
+	'''
+	A function that takes an unrefined match
+	'''
+	if match['region'] != 'NA': #Only for North America
+		return 
+	else:
+		#Our keys are limited to 10 requests every 10 seconds, so we cycle through them
+		to_append = get_match_info_for_summoner(match, key_list[multiprocessing.current_process()._identity[0] % len(key_list) - 1], summoner_id, champion_id_table)
+		to_append['lane'] = match['lane']
+		to_append['role'] = match['role']
+		return to_append
 
 def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 	'''
@@ -90,9 +118,9 @@ def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 		try:
 			#Unfortunately, pulling from the API here takes most of the time. About .4 seconds.
 			match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
-		except urllib.error.HTTPError:
+		except urllib.error.HTTPError as e:
 			counter += 1
-			if counter == 10:
+			if counter == 2:
 				break
 			continue
 		break
@@ -130,7 +158,7 @@ def export_matches(file_name, matchlist):
 	Some functionality to store JSON files
 	'''
 	with open(file_name, 'w') as outfile:
-	    json.dump(matchlist, outfile)
+		json.dump(matchlist, outfile)
 
 def add_to_SQL(s_id, s_name, match_list):
 	'''
@@ -138,7 +166,6 @@ def add_to_SQL(s_id, s_name, match_list):
 	The Summoner table keeps track of summoner-specific information, the Match table keeps track of the matches
 	that all the summoners have played, and the Junction table stores the data that are part of both.
 	Summoner and Junction can be joined on summoner_id, Junction and Match can be joined on the match_id
-
 	Since Summoner must be updated, we finish summoner and match first, then pull out the data and update the values for Summoner
 	'''
 
@@ -149,7 +176,7 @@ def add_to_SQL(s_id, s_name, match_list):
 	SQL_match_table = ['match_id UNIQUE', 'season', 'time_stamp', 'match_duration']
 
 	SQL_junction_table = ['primary_key', 'summoner_id', 'match_id', 'champion', 'lane', 'role', 'winner', 'cs', \
-	'kills', 'deaths','assists','gold', 'total_damage_dealt_champions','wards_placed', 'wards_killed', 'allies', 'enemies']
+	'kills', 'deaths','assists','gold', 'total_damage_dealt_champions_min','wards_placed', 'wards_killed', 'allies', 'enemies']
 
 	summoner_values = []
 	match_values = []
@@ -227,7 +254,7 @@ def update_global_values(summoner_id, cursor):
 	'''
 	This function updates the global values for a summoner. It keeps track of the average of the stats listed below.
 	'''
-	select_statement = 'match_duration, winner, cs, kills, deaths, assists, gold, wards_placed, wards_killed, total_damage_dealt_champions'
+	select_statement = 'match_duration, winner, cs, kills, deaths, assists, gold, wards_placed, wards_killed, total_damage_dealt_champions_min'
 	separate_info = cursor.execute("SELECT {} from Matches JOIN Junction ON Matches.match_id = Junction.match_id WHERE summoner_id = ?".format(select_statement), (summoner_id,)).fetchall()
 
 	total_duration = 0
@@ -242,7 +269,7 @@ def update_global_values(summoner_id, cursor):
 	gold_per_min = 0
 	wards_placed = 0
 	wards_killed = 0
-	total_damage_dealt_champions = 0
+	total_damage_dealt_champions_min = 0
 
 	for match in separate_info:
 		total_duration += match[0]
@@ -254,16 +281,16 @@ def update_global_values(summoner_id, cursor):
 		gold += match[6] / len(separate_info)
 		wards_placed += match[7] / len(separate_info)
 		wards_killed += match[8] / len(separate_info)
-		total_damage_dealt_champions += match[9] / len(separate_info)
+		total_damage_dealt_champions_min += match[9] / len(separate_info) / 60
 
 	winrate = winrate/len(separate_info)
 	cs_per_min = cs * len(separate_info) / (total_duration / 60)
 	gold_per_min = gold * len(separate_info) / (total_duration / 60)
 	kda = (kills + assists) / max(1, deaths)
 
-	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, total_damage_dealt_champions, wards_placed, wards_killed, len(separate_info)]
+	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, total_damage_dealt_champions_min, wards_placed, wards_killed, len(separate_info)]
 
-def get_summoner(summoner_name, save_json = False, write_SQL = True):
+def get_summoner(summoner_name, save_json = False):
 	print('Start:', time.clock())
 	summoner_name = summoner_name.lower()
 	try:
@@ -280,12 +307,19 @@ def get_summoner(summoner_name, save_json = False, write_SQL = True):
 		print('Finish:', time.clock())
 		return matches
 
+	print('Processing Matches and Updating Database')
+	time.sleep(1) #More rate-limiting adjustments
+	processed = parse_matches(matches, summoner_id, summoner_name)
+
 	if save_json == True:
 		print('Saving Jsons')
 		export_matches('{}.json'.format(summoner_name, matches))
 
-	if write_SQL == True:
-		print('Creating SQL database')
-		add_to_SQL(summoner_id, summoner_name, matches)
-
 	print('Finish:', time.clock())
+
+if __name__ == '__main__':
+	if len(sys.argv) != 2:
+		print("usage: python3 {} <Summoner Name>".format(sys.argv[0]))
+		sys.exit(1)
+
+	get_summoner(sys.argv[1])
