@@ -8,7 +8,6 @@ import sys
 import multiprocessing
 import collections
 from functools import partial
-import speedlimit
 
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
 key2 = '8015aa1d-df1d-4cda-b319-dffcbcf2f708'
@@ -16,10 +15,12 @@ key3 = 'fa134dbe-f2ab-4ec8-87f6-3a653298a272'
 key_list = [key, key2, key3]
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
-LIMITER = speedlimit.SpeedLimit(2.35) #500 per 10 min * 3 keys => 2.5 per sec, little less to be safe
 #Meant to make the code update the database more frequently. However, due to the nature of multiprocessing, it seems that
-#it also controls how many simultaneous calls are made to the API?
-UPDATE_FREQUENCY = 9
+#we need to keep this below 10 (limit per 10 second per key) to be safe, due to the nature of how the multiprocessing works. 
+UPDATE_FREQUENCY = 8
+#This is assuming the program will get more keys to improve the rate limit. Only a few modification will need to be made in
+#the case that we receive a production-level key
+MAX_TIME_PER_BLOCK = UPDATE_FREQUENCY / (len(key_list) * 500 / 600)
 
 def get_champion_id_table(key):
 	'''
@@ -80,27 +81,39 @@ def parse_matches(match_list, summoner_id, summoner_name):
 	champion_id_table = get_champion_id_table(key)
 
 	#the map below only accepts a function with one argument, and the other arguments are static anyways
-	func = partial(process_match, summoner_id = summoner_id)
-	func2 = partial(func, champion_id_table = champion_id_table)
+	process_partial = partial(process_match, summoner_id = summoner_id, champion_id_table = champion_id_table)
 
 	#We moved to using a multiprocessing approach since the limiting factor wasn't computational speed, but rather server connection speed
 	#Now we are very obviously limited by the API keys. Should we ever get a production key a just a few constants have to be changed
+
+	key_counter = 0 #We use this counter in case the number of keys we have and the update frequency are not multiples
 	for block in [match_list[i:i + UPDATE_FREQUENCY] for i in range(0, len(match_list), UPDATE_FREQUENCY)]:
-		pool = multiprocessing.Pool(len(key_list), maxtasksperchild = 3) #We don't want any 1 process hogging
-		results = pool.map(func2, LIMITER.speed_limit_iter(block))
+		for i in range(len(block)):
+			block[i] = (block[i], key_list[key_counter % len(key_list)])
+			key_counter += 1 
+		t = time.clock()
+		pool = multiprocessing.Pool()
+		results = pool.map(process_partial, block)
 		pool.close() 
 		pool.join() 
+		process_time = time.clock() - t
+		if process_time < MAX_TIME_PER_BLOCK:
+			# print('sleeping for', MAX_TIME_PER_BLOCK - (process_time))
+			time.sleep((MAX_TIME_PER_BLOCK - (process_time)) * 1.05)
 		add_to_SQL(summoner_id, summoner_name, results)
+		
 
-def process_match(match, summoner_id, champion_id_table):
+def process_match(block, summoner_id, champion_id_table):
 	'''
 	A function that takes an unrefined match
 	'''
+	match = block[0]
+	key = block[1]
 	if match['region'] != 'NA': #Only for North America
 		return 
 	else:
 		#Our keys are limited to 10 requests every 10 seconds, so we cycle through them
-		to_append = get_match_info_for_summoner(match, key_list[multiprocessing.current_process()._identity[0] % len(key_list) - 1], summoner_id, champion_id_table)
+		to_append = get_match_info_for_summoner(match, key, summoner_id, champion_id_table)
 		to_append['lane'] = match['lane']
 		to_append['role'] = match['role']
 		return to_append
@@ -112,17 +125,20 @@ def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 	'''
 	match_id = match['matchId']
 
-	#Catches some weird HTTP 500 Error that comes up every like, 1000 games for some reason. Counter is probably not needed
 	counter = 0
 	while True:
 		try:
 			#Unfortunately, pulling from the API here takes most of the time. About .4 seconds.
 			match_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v2.2/match/{}?api_key={}'.format(match_id, key))
-		except urllib.error.HTTPError as e:
-			counter += 1
-			if counter == 2:
-				break
-			continue
+		except urllib.error.HTTPError as err:
+			if err.code == 429: #If we got rate-limited somehow, wait and try again
+				time.sleep(2)
+				continue
+			else: #Catches some weird HTTP 500 Error that comes up every like, 1000 games for some reason.
+				counter += 1
+				if counter == 2:
+					break
+				continue
 		break
 
 	match_info_not_byte = match_info.read().decode('utf-8')
@@ -170,7 +186,7 @@ def add_to_SQL(s_id, s_name, match_list):
 	'''
 
 	SQL_summoner_table = ['summoner_id', 'summoner_name', 'winrate', 'cs', 'kills', 'deaths', 'assists',\
-	 'kda', 'gold', 'cs_per_min', 'gold_per_min', 'total_damage_dealt_champions', 'wards_placed', 'wards_killed', 'matches_played']
+	 'kda', 'gold', 'cs_per_min', 'gold_per_min', 'total_damage_dealt_champions_min', 'wards_placed', 'wards_killed', 'matches_played']
 
 	#Since it is possible that players in the database have been in the same match, we make match_id unique to avoid duplicates
 	SQL_match_table = ['match_id UNIQUE', 'season', 'time_stamp', 'match_duration']
@@ -191,7 +207,7 @@ def add_to_SQL(s_id, s_name, match_list):
 		match_values.append((
 			match['match_id'],
 			match['season'],
-			match['timestamp']/1000,
+			match['timestamp'] / 1000,
 			match['match_duration']))
 
 		junction_values.append((
@@ -274,18 +290,19 @@ def update_global_values(summoner_id, cursor):
 	for match in separate_info:
 		total_duration += match[0]
 		winrate += match[1]
-		cs += match[2] / len(separate_info)
+		cs += match[2]
 		kills += match[3] / len(separate_info)
 		deaths += match[4] / len(separate_info)
 		assists += match[5] / len(separate_info)
-		gold += match[6] / len(separate_info)
+		gold += match[6]
 		wards_placed += match[7] / len(separate_info)
 		wards_killed += match[8] / len(separate_info)
-		total_damage_dealt_champions_min += match[9] / len(separate_info) / 60
+		total_damage_dealt_champions_min += match[9]
 
 	winrate = winrate/len(separate_info)
-	cs_per_min = cs * len(separate_info) / (total_duration / 60)
-	gold_per_min = gold * len(separate_info) / (total_duration / 60)
+	cs_per_min = cs / (total_duration / 60)
+	gold_per_min = gold / (total_duration / 60)
+	total_damage_dealt_champions_min = total_damage_dealt_champions_min / (total_duration / 60)
 	kda = (kills + assists) / max(1, deaths)
 
 	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, total_damage_dealt_champions_min, wards_placed, wards_killed, len(separate_info)]
