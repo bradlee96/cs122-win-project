@@ -18,7 +18,7 @@ DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
 #Meant to make the code update the database more frequently. However, due to the nature of multiprocessing, it seems that
 #we need to keep this below 10 (limit per 10 second per key) to be safe, due to the nature of how the multiprocessing works. 
 UPDATE_FREQUENCY = 8
-#This is assuming the program will get more keys to improve the rate limit. Only a few modification will need to be made in
+#This is assuming the program will get more keys to improve the rate limit. Only a few modifications will need to be made in
 #the case that we receive a production-level key
 MAX_TIME_PER_BLOCK = UPDATE_FREQUENCY / (len(key_list) * 500 / 600)
 
@@ -75,12 +75,15 @@ def get_matches(summoner_name, summoner_id, key, team_data = True):
 	return matches
 
 def parse_matches(match_list, summoner_id, summoner_name):
+	'''
+	Returns nothing, but updates the database. 
+	'''
 	#We reverse so that the oldest games are processed first, it in case of interruption the procedure for getting the latest game still functions
 	match_list.reverse()
 
 	champion_id_table = get_champion_id_table(key)
 
-	#the map below only accepts a function with one argument, and the other arguments are static anyways
+	#the pool.map below seems to only accept a function with one argument, and the other arguments are static anyways
 	process_partial = partial(process_match, summoner_id = summoner_id, champion_id_table = champion_id_table)
 
 	#We moved to using a multiprocessing approach since the limiting factor wasn't computational speed, but rather server connection speed
@@ -98,8 +101,8 @@ def parse_matches(match_list, summoner_id, summoner_name):
 		pool.join() 
 		process_time = time.clock() - t
 		if process_time < MAX_TIME_PER_BLOCK:
-			# print('sleeping for', MAX_TIME_PER_BLOCK - (process_time))
-			time.sleep((MAX_TIME_PER_BLOCK - (process_time)) * 1.05)
+			#Increasing the sleep time when we are too fast by 5% virtually eliminated any rate errors
+			time.sleep((MAX_TIME_PER_BLOCK - (process_time)) * 1.05) 
 		add_to_SQL(summoner_id, summoner_name, results)
 		
 
@@ -134,7 +137,7 @@ def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 			if err.code == 429: #If we got rate-limited somehow, wait and try again
 				time.sleep(2)
 				continue
-			else: #Catches some weird HTTP 500 Error that comes up every like, 1000 games for some reason.
+			else: #Catches some weird HTTP 500 Error that comes up incredibly infrequently
 				counter += 1
 				if counter == 2:
 					break
