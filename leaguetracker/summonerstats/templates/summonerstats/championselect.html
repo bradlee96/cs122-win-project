@@ -14,7 +14,7 @@
         <legend class='champion-select-header'>Champion Select Recommender:</legend>
         <!-- If there is a champion recommendation, add picture and statistics -->
         {% if recommended_champion %}
-          {% with 'img/champions/'|add:recommended_champion|add:'Square.png' as champion_icon %}
+          {% with 'img/champions/'|add:recommended_champion|add:'.png' as champion_icon %}
              <img src="{% static champion_icon %}" title="Recommended Champion: {{ recommended_champion }}" height=50px width=50px>
              <p>{{ champion_select_summoner }}'s {{ recommended_champion }} Statistics:</p>
              <p>Games Played: {{ matches_played }} | Win Rate: {{ winrate }} | KDA: {{ kda|floatformat }}</p>
