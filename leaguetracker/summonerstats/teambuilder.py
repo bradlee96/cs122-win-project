@@ -96,8 +96,9 @@ def normalize_for_champ_experience(matchlist):
 
 def suggest(data, champ_experience_normalizer, allies, enemies):
 	'''
-	If someone has never played with a champion in the draft, we continue as if the champion weren't there
+	Goes through and calculates the winrates for each champion and ally/enemy pair and applies weights.
 
+	Note: If someone has never played with a champion in the draft, we continue as if the champion werent there
 	'''
 	dic = {}
 	for champ in data:
@@ -133,9 +134,11 @@ def suggest(data, champ_experience_normalizer, allies, enemies):
 
 def fitness_gen(data, champ_experience_normalizer, iterator):
 	'''
-	This function calculated the fitness for each champion.
-	normalizer keeps the fitness between 0 and 1, so that having many unique pairs doesn't skew the data
+	If iterator is None, then we return a champion suggestion based purely off of who you play best
+	If it is not None, then we consider those who are already in the draft.
 
+	normalizer keeps the results between 0 and 1, so that champions with many pairs dont skew the result
+	ties are broken arbitrarily
 	'''
 	final_result = ['', -1]
 	if iterator == None:
@@ -163,7 +166,7 @@ def fitness_gen(data, champ_experience_normalizer, iterator):
 			fitness = 0
 			normalizer = None
 			for guy in iterator: #We iterate over the allies and enemies in the draft
-				try:
+				try: #In case we haven't played with some
 					fitness += normalizing_for_champ_experience * data[champ][guy]
 					if normalizer == None:
 						normalizer = 1
@@ -226,3 +229,4 @@ def get_recommendation(summoner_id, allies, enemies, role):
 			return 'champerror'
 
 	return suggest(learned, champ_experience_normalizer, allies, enemies)
+	
