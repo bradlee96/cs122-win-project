@@ -6,7 +6,6 @@ import os
 import sys
 
 import multiprocessing
-import collections
 from functools import partial
 
 key = '9df451c2-91bc-4584-99f5-87334af39c2a'
@@ -19,7 +18,7 @@ DATABASE_FILENAME = os.path.join(BASE_DIR, 'Fiendish_Codex.db')
 #we need to keep this below 10 (limit per 10 second per key) to be safe, due to the nature of how the multiprocessing works. 
 UPDATE_FREQUENCY = 8
 #This is assuming the program will get more keys to improve the rate limit. Only a few modifications will need to be made in
-#the case that we receive a production-level key
+#the case that we receive a production-level key, or more keys.
 MAX_TIME_PER_BLOCK = UPDATE_FREQUENCY / (len(key_list) * 500 / 600)
 
 def get_champion_id_table(key):
@@ -90,12 +89,15 @@ def parse_matches(match_list, summoner_id, summoner_name):
 	#Now we are very obviously limited by the API keys. Should we ever get a production key a just a few constants have to be changed
 
 	key_counter = 0 #We use this counter in case the number of keys we have and the update frequency are not multiples
+
+	#This block was composed through a combination of 1. careful reading of the multiprocessing documentation and 
+	#2. chaining through stackexchange posts. No specific code was used, although stackexchange assisted greatly in understanding.
 	for block in [match_list[i:i + UPDATE_FREQUENCY] for i in range(0, len(match_list), UPDATE_FREQUENCY)]:
 		for i in range(len(block)):
 			block[i] = (block[i], key_list[key_counter % len(key_list)])
 			key_counter += 1 
 		t = time.clock()
-		pool = multiprocessing.Pool()
+		pool = multiprocessing.Pool(4)
 		results = pool.map(process_partial, block)
 		pool.close() 
 		pool.join() 
@@ -124,7 +126,7 @@ def process_match(block, summoner_id, champion_id_table):
 def get_match_info_for_summoner(match, key, summoner_id, champion_id_table):
 	'''
 	Parses out the summoner-specific information. Returns a dictionary.
-	Participant ID 1-5 are team 1, arbitrarily assigned
+	Participant ID 1-5 are team 1, but the ID's are arbitrarily assigned
 	'''
 	match_id = match['matchId']
 
@@ -311,7 +313,10 @@ def update_global_values(summoner_id, cursor):
 	return [winrate, cs, kills, deaths, assists, kda, gold, cs_per_min, gold_per_min, total_damage_dealt_champions_min, wards_placed, wards_killed, len(separate_info)]
 
 def get_summoner(summoner_name, save_json = False):
-	print('Start:', time.clock())
+	'''
+	Takes summoner name -> gets summoner id from API -> gets a list of matches -> iterates through and processes matches ->
+	match data is put into the database frequently 
+	'''
 	summoner_name = summoner_name.lower()
 	try:
 		summoner_info = urllib.request.urlopen('https://na.api.pvp.net/api/lol/na/v1.4/summoner/by-name/{}?api_key={}'.format((summoner_name.replace(' ','')), key))
@@ -323,8 +328,8 @@ def get_summoner(summoner_name, save_json = False):
 	print('Pulling Matches')
 	matches = get_matches(summoner_name, summoner_id, key)
 
+	#For example, if a summoner has no matches played
 	if type(matches) != list:
-		print('Finish:', time.clock())
 		return matches
 
 	print('Processing Matches and Updating Database')
@@ -334,8 +339,6 @@ def get_summoner(summoner_name, save_json = False):
 	if save_json == True:
 		print('Saving Jsons')
 		export_matches('{}.json'.format(summoner_name, matches))
-
-	print('Finish:', time.clock())
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
