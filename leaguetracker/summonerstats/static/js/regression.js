@@ -11,6 +11,7 @@
  *
  **/
 
+// This is a DIRECT COPY. None of this was edited by us.
 function regression(x, y, typ) {
   var type = (typ == null) ? 'linear' : typ;
   var N = x.length;

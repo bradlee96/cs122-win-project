@@ -1,8 +1,10 @@
+<!-- ORIGINAL -->
 {% extends 'summonerstats/base_with_sidebar.html' %}
 {% load staticfiles %}
 {% block content %}
   <div class="champion-select-page">
     <div class="champion-select">
+      <!-- Error messages at the top, if any -->
       {% if messages %}
           {% for message in messages %}
               <p class='error'>{{ message }}</p>
@@ -10,6 +12,7 @@
       {% endif %}
       <form id="champion-select-form">
         <legend class='champion-select-header'>Champion Select Recommender:</legend>
+        <!-- If there is a champion recommendation, add picture and statistics -->
         {% if recommended_champion %}
           {% with 'img/champions/'|add:recommended_champion|add:'Square.png' as champion_icon %}
              <img src="{% static champion_icon %}" title="Recommended Champion: {{ recommended_champion }}" height=50px width=50px>
@@ -20,6 +23,7 @@
         <fieldset class='champion-select'>
           <table>
             <tr>
+              <!-- If a summoner has already been selected in a previous submission, make the preset -->
               {% if champion_select_summoner %}
                 <th colspan="2"><input type="text" class="small-search-text" name="champion_select_summoner" value="{{ champion_select_summoner }}"/></td></th>
               {% else %}
@@ -27,11 +31,13 @@
               {% endif %}
             </tr>
             <tr>
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if ally_champion_1 %}
                 <td><input type="text" class="small-search-text" name="ally_champion_1" value="{{ ally_champion_1 }}"/></td>
               {% else %}
                 <td><input type="text" class="small-search-text" name="ally_champion_1" placeholder="Ally Champion 1"/></td>
               {% endif %}
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if enemy_champion_1 %}
                 <td><input type="text" class="small-search-text" name="enemy_champion_1" value="{{ enemy_champion_1 }}"/></td>
               {% else %}
@@ -39,11 +45,13 @@
               {% endif %}
             </tr>
             <tr>
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if ally_champion_2 %}
                 <td><input type="text" class="small-search-text" name="ally_champion_2" value="{{ ally_champion_2 }}"/></td>
               {% else %}
                 <td><input type="text" class="small-search-text" name="ally_champion_2" placeholder="Ally Champion 2"/></td>
               {% endif %}
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if enemy_champion_2 %}
                 <td><input type="text" class="small-search-text" name="enemy_champion_2" value="{{ enemy_champion_2 }}"/></td>
               {% else %}
@@ -51,11 +59,13 @@
               {% endif %}
             </tr>
             <tr>
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if ally_champion_3 %}
                 <td><input type="text" class="small-search-text" name="ally_champion_3" value="{{ ally_champion_3 }}"/></td>
               {% else %}
                 <td><input type="text" class="small-search-text" name="ally_champion_3" placeholder="Ally Champion 3"/></td>
               {% endif %}
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if enemy_champion_3 %}
                 <td><input type="text" class="small-search-text" name="enemy_champion_3" value="{{ enemy_champion_3 }}"/></td>
               {% else %}
@@ -63,11 +73,13 @@
               {% endif %}
             </tr>
             <tr>
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if ally_champion_4 %}
                 <td><input type="text" class="small-search-text" name="ally_champion_4" value="{{ ally_champion_4 }}"/></td>
               {% else %}
                 <td><input type="text" class="small-search-text" name="ally_champion_4" placeholder="Ally Champion 4"/></td>
               {% endif %}
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if enemy_champion_4 %}
                 <td><input type="text" class="small-search-text" name="enemy_champion_4" value="{{ enemy_champion_4 }}"/></td>
               {% else %}
@@ -75,11 +87,13 @@
               {% endif %}
             </tr>
             <tr>
+              <!-- If a champion has been recommended, show it in a disabled box -->
               {% if recommended_champion %}
                 <td><input type="text" DISABLED id="recommendation" class="dark-small-search-text" name="player-champion" value="{{ recommended_champion }}"/></td>
               {% else %}
                 <td><input type="text" DISABLED id="recommendation" class="dark-small-search-text" name="player-champion" placeholder="Your Recommended Champion"/></td>
               {% endif %}
+              <!-- If a champion has already been selected in a previous submission, make the preset -->
               {% if enemy_champion_5 %}
                 <td><input type="text" class="small-search-text" name="enemy_champion_5" value="{{ enemy_champion_5 }}"/></td>
               {% else %}
@@ -90,6 +104,7 @@
         </fieldset>
         <fieldset class='champion-select'>
           <legend class='sub'>Role*</legend>
+          <!-- If a role has already been selected in a previous submission, make the preset -->
           {% if role %}
             {% if role == 'TOP' %}
               <input id="r1" type="radio" name="role" value="TOP" checked>

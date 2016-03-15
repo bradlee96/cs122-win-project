@@ -1,3 +1,4 @@
+<!-- ORIGINAL -->
 {% extends 'summonerstats/base_with_sidebar.html' %}
 {% load staticfiles %}
 {% block content %}
@@ -11,7 +12,7 @@
     <br>
     {% if messages %}
         {% for message in messages %}
-            <p class='error'>{{ message }}</p>
+            <p class='error'>{{ message }}</p> <!-- displays messages if any -->
         {% endfor %}
     {% endif %}
     <br>

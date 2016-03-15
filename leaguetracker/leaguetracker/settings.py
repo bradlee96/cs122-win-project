@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'e@v+$r(j=p6qcx&j@@2jekvvf^$f6pnd=sbcbi4_=p8(@5ddxe'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['leaguetracker.pythonanywhere.com', 'localhost']
+ALLOWED_HOSTS = []
 
 
 # Application definition

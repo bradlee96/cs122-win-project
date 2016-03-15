@@ -17,11 +17,13 @@ from django.conf.urls import url
 from django.views.generic import RedirectView
 from . import views
 
+# MODIFIED
+
 urlpatterns = [
      url(r'^$', views.home, name='home'),
      url(r'^about/$', views.about, name='about'),
      url(r'^championselect/$', views.championselect, name='championselect'),
      url(r'^summonernotfound/(?P<summoner_name>[\w\ ]+)/$', views.summonernotfound, name='summonernotfound'),
      url(r'^summoner/(?P<summoner_name>[\w\ ]+)/$', views.stats, name='stats'),
-     url(r'^summoner/$', RedirectView.as_view(pattern_name='home'))
+     url(r'^summoner/$', RedirectView.as_view(pattern_name='home')) # just to avoid an error
 ]

@@ -1,7 +1,9 @@
+<!-- ORIGINAL -->
 {% extends 'summonerstats/base.html' %}
 
 {% block content %}
   <div class='stats-page'>
+    <!-- Error messages at the top, if any -->
     {% if messages %}
         {% for message in messages %}
             <p class='error'>{{ message }}</p>
@@ -77,7 +79,9 @@
             </tr>
           </table>
         </div>
+        <!-- If the graph button was pressed -->
         {% if chart %}
+          <!-- If the large option was selected -->
           {% if large %}
             <div class="large-charts">
               <div id="cs-container-0" style="width: 800px; height: 500px;"></div>
@@ -114,6 +118,7 @@
         {% endif %}
       </div>
     </div>
+    <!-- DIRECT COPY -->
     <div class="options-area">
       <nav class="main-menu">
         <ul>
