@@ -1,4 +1,5 @@
-# cs122-win-project
+cs122-win-project
+==============
 League of Legends Project
 
 Project Members: Brad Lee, Philip Zhou, Johnathan Hsu
