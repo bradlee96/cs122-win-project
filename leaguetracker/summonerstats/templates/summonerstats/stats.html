@@ -19,9 +19,13 @@
     </div>
     <br>
     <div class='all-stats'>
+      <!-- The following code puts the lifetime stats into a table -->
+
+      <!-- If graphing option was selected, lifetime stats table will be on left -->
       {% if chart %}
         <div class='lifetime-stats-with-chart'>
           <table class='bordered-table'>
+      <!-- Otherwise lifetime stats table will be in center -->
       {% else %}
         <div class='lifetime-stats-without-chart'>
           <table class='bordered-table' style="margin: 0px auto;">
@@ -119,6 +123,7 @@
       </div>
     </div>
     <!-- DIRECT COPY -->
+    <!-- This is the sidebar -->
     <div class="options-area">
       <nav class="main-menu">
         <ul>
@@ -204,6 +209,8 @@
   </div>
   <br>
   <br>
+  <!-- The following is jQuery code that couldn't be moved to an external file
+  due to issues loading data passed through Django -->
   <script>
     $(function () {
         role = "{{ role }}";
@@ -236,7 +243,11 @@
         goldPerMinRegValues = [];
         wardsPlacedRegValues = [];
         wardsKilledRegValues = [];
+        // Removes all values where the number of matches played is less than
+        // the minimum specified by the user (default = 1)
         for (i = 0; i < matchesPlayed.length; i++) {
+            // If number of matches is insufficient, make value null so it
+            // is ignored by highcharts
             if (matchesPlayed[i] < minGames) {
                 matchesPlayed[i] = null;
                 winrateValues[i] = null;
@@ -252,6 +263,7 @@
                 wardsPlacedValues[i] = null;
                 wardsKilledValues[i] = null;
             }
+            // Otherwise add it to array of regression values
             else {
                 j = Date.UTC(timeStart[0], timeStart[1]-1, timeStart[2]) + timeInterval * i;
                 winrateValues[i] = winrateValues[i] * 100;
@@ -270,6 +282,7 @@
                 wardsKilledRegValues.push([j, wardsKilledValues[i]]);
             }
         }
+        // The following is all highcharts code. It was HEAVILY modified.
         $('#cs-container-0').highcharts({
             chart: {
                 type: 'spline',

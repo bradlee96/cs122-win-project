@@ -1,3 +1,4 @@
+/* ORIGINAL */
 * {
   font-family: 'Titillium Web';
 }
@@ -214,6 +215,7 @@ fieldset.stats {
 p.form-caveat {
   font-size: 11px;
 }
+/* MODIFIED */
 .fa-2x {
   font-size: 2em;
 }
