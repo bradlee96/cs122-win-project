@@ -1,7 +1,7 @@
-cs122-win-project
+League of Legends Performance Tracker and Champion Recommender Tool
 ==============
-League of Legends Project
-
+CS122 Winter Project
+--------------
 Project Members: Brad Lee, Philip Zhou, Johnathan Hsu
 
 Goal: To display and analyze statistics on summoners and their improvement over time
